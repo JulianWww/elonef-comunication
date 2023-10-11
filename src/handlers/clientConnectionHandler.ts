@@ -52,6 +52,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * an AES key map used to decript message contents.
      */
     private aes_keys: Map<string, Promise<Buffer>>;
+    private buffer_getter: (data: any) => Buffer
 
 
     /**
@@ -59,7 +60,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param address the address of the server to connect to.
      * @param priv_key the private key used to authenticate the user, sign data and get data points.
      */
-    constructor(sock: WebSocket, priv_key: PrivateClientKey) {
+    constructor(sock: WebSocket, priv_key: PrivateClientKey, buffer_getter: (data: any) => Buffer = (v)=> v.data) {
         super();
 
         this.sign_key = import_private(priv_key.sign_key);
@@ -76,6 +77,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
 
         this.signature_keys = new Map();
         this.aes_keys = new Map();
+        this.buffer_getter = buffer_getter
     }
 
     /**
@@ -120,7 +122,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param data the data recived by the sever
      */
     protected get_data_from_server = (data: MessageEvent) => {
-        this.handle_message(this.sock, "", data.data as Buffer, true);
+        this.handle_message(this.sock, "", this.buffer_getter(data), true);
     }
 
     /**
