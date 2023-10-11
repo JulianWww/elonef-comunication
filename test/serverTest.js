@@ -2,14 +2,18 @@ const { ServerConnectionHandler, generateClientKeys } = require('../lib');
 
 const key = {
   "data_key": {
-    "key": "-----BEGIN RSA PUBLIC KEY-----\nMIGJAoGBANwSLpEUDEOzk5rL1VzX0qTpwupNLuysIO3AaxJmyIu1n+ehJrX0N71q\nve9K63tMdq9ahxuXeX3Fcu7KyI9EVx/Gv8arE4JF45Q8HZR3MWDFWq0Ye0M9l+64\n3g1mAokMgrzXrRpYPhEf3/AWdYCdzTh4rPo3+QtbRUufRcT/ZefhAgMBAAE=\n-----END RSA PUBLIC KEY-----\n",
+    "key": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAs0GiTYqcw7NFkWEZXUMGGh8pDc2HUwYx+60jDa0Af6R1VGu+KZiy\nA6bXKPDUmCoRftvhOuGaOq8d8FL28ybEW/xBOsIAtJtIN4ZoD0ME0VvTCMm1Vz8w\nVqYrI0vFftlZoslKqRwKXe2cPIEBzkB6fJrwsAkUczxowzc7N9DHqWd4CESJdpzQ\n4ijr2oi0YhytWKNpjTwi9WapS2xNUbYMRquxP2QVAFvKg4nO+jtZkxMFMAelhuxo\n2AQ8/cBAUw8uDI+jfop4OUux21xhUvkHgG0i1OObsAulV8LfqTFlE+tnlzKfzfyU\nS2XTxXRiuiUMLCs9nlSgLBxkqpfJbPBJIwIDAQAB\n-----END RSA PUBLIC KEY-----",
     "signatures": {}
   },
   "sign_key": {
-    "key": "-----BEGIN PUBLIC KEY-----\nMIGnMBAGByqGSM49AgEGBSuBBAAnA4GSAAQAwjnU3nsRQUnePJ6UzsO0t8BX9uKy\nLBWZcYI+GEfBA/RjSh3PUMLrFNM6WtHS7grVvgI43YmvMXDlU+FixXaNOInkE72o\nrcgCl6hXKimoTfIuJuCA1HFhAplJSRzRxjzhtaT/G3xzTbNdvoL30okZbst6Jrqh\n+YpQdBFD1EQaUaHzSxagkldcfGB82E1PO9U=\n-----END PUBLIC KEY-----\n",
+    "key": "BI2VJkAembsuvCvhyqIx2ZWs29ZW7/3/HcHlXd2pLK+tZv5YEnDzT6apjfkaCr5K39dhaJAzUXxghRjVDVn95MY=",
     "signatures": {}
-  }
+  },
+  "id": "d"
 }
+
+
+console.log(generateClientKeys("", [], "d").then(key => console.log(JSON.stringify(key, null, 2))))
 
 var chat_key = new Map();
 var messages = [];

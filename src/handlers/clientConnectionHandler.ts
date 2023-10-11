@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { PrivateClientKey, SignedKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
+import { WebSocket, MessageEvent } from "ws";
 import { import_private, import_public } from "../keys";
 import { sign, sign_nonstreamable, verifyAndRaiseError } from "../encription/sign";
 import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToString, bufferToStringArray, numberToBuffer, stringToBuffer, uuid_size } from "../encoding";
@@ -10,7 +11,6 @@ import { Buffer } from "buffer";
 
 import { KeyObject } from "../types";
 
-type WebSocket = any;
 
 /**
  * a connection handler that will connect to a server running the serverConnectionHandler. It will connect and automatically authenticate the user with the private key provided. It provides the ability to send and receive messages for any chat you are a part of.
@@ -67,7 +67,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
         this.uid = priv_key.uid;
         
         this.sock = new WebSocket(address);
-        this.sock.onmessage(this.get_data_from_server);
+        this.sock.addEventListener("message", this.get_data_from_server);
 
         this.make_ready = () => 1;
         this.ready = new Promise<void>((resolve, _)=> {
@@ -86,10 +86,10 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param authenticated dummy if the connection is authenticated.
      * @returns the signature
      */
-    protected handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean): Buffer {
+    protected async handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean): Promise<Buffer> {
         const out = Buffer.concat([
             stringToBuffer(this.uid),
-            sign_nonstreamable(message, this.sign_key)
+            await sign_nonstreamable(message, this.sign_key)
         ]);
         this.make_ready();
         return out;
@@ -119,8 +119,8 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * handler that populates the static contents for handle_message. this is a callback for when the socket recieves a message from the server.
      * @param data the data recived by the sever
      */
-    protected get_data_from_server = (data: Buffer) => {
-        this.handle_message(this.sock, "", data, true);
+    protected get_data_from_server = (data: MessageEvent) => {
+        this.handle_message(this.sock, "", data.data as Buffer, true);
     }
 
     /**
@@ -318,7 +318,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
      */
     async send_message(message: Buffer, chat_id: string) {
         const { uuid, key } = await this.get_newest_chat_key(chat_id);
-        const enc = sign(
+        const enc = await sign(
             encript_aes(
                 Buffer.from(
                     message
@@ -377,7 +377,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
                 return {
                     user_name, 
                     content: decript_aes(
-                        verifyAndRaiseError(
+                        await verifyAndRaiseError(
                             data, 
                             await this.get_signature_key(user_name)
                         ), 

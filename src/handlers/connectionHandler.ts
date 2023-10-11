@@ -67,7 +67,7 @@ export class ConnectionHandler {
             out = await this.handle_api_call(ws, userid, content, authenticated);
         }
         else if (type == ConnectionHandler.AUTH) {
-            out = this.handle_auth(ws, userid, content, authenticated);
+            out = await this.handle_auth(ws, userid, content, authenticated);
         }
         else {
             out = await this.handle_single_side_messages(ws, userid, content, authenticated, type);
@@ -80,7 +80,7 @@ export class ConnectionHandler {
         return Buffer.from([]);
     }
 
-    protected handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean) {
+    protected async handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean) {
         return Buffer.from([]);
     }
 

@@ -18,13 +18,16 @@
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.4",
+    "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.1",
     "@rollup/plugin-typescript": "^11.1.4",
     "@types/jest": "^29.5.4",
     "@types/node": "^20.6.5",
     "@types/node-cache": "^4.2.5",
+    "@types/node-rsa": "^1.1.2",
     "@types/ws": "^8.5.6",
-    "browserify": "^17.0.0",
+    "@types/aes-js": "^3.1.2",
+    "@types/eccrypto": "^1.1.4",
     "jest": "^29.7.0",
     "node": "^20.7.0",
     "postcss": "^8.4.31",
@@ -37,8 +40,12 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "aes-js": "^3.1.2",
     "buffer": "^6.0.3",
+    "crypto-hash": "^2.0.1",
+    "eccrypto": "^1.1.6",
     "node-cache": "^5.1.2",
+    "node-rsa": "^1.1.1",
     "ws": "^8.14.2"
   }
 }

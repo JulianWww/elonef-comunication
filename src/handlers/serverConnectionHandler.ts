@@ -71,7 +71,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
         const signature = reader.readRest();
         
 
-        const key = import_public((await this.get_pub_key(user_id))?.sign_key.key)
+        const key = import_public((await this.get_pub_key(user_id))?.sign_key.key) as Buffer | nothing
         if (!key) {
             throw Error("missing public key for user " + user_id);
         }

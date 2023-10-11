@@ -1,58 +1,40 @@
-import crypto from 'crypto';
+import NodeRSA from "node-rsa";
+import { generatePrivate as generatePrivateECDSA, getPublic as getPublicECDSA } from "eccrypto";
 import { toKeyMap } from '../utility';
 import { KeyObject } from "../types";
 
 
 const format = "pem"
-const curve = "sect571r1"
+const curve = "secp256k1"
 /**
  * Generates equivalent to RSASSA-PKCS1-v1_5 keypair
  */
-async function generateKeyPairRSA(): Promise<{
-    publicKey: any,
-    privateKey: any
-  }> {
-    return new Promise((resolve, reject) => {
-      crypto.generateKeyPair('rsa', {
-        modulusLength: 1024,
-      }, (err, publicKey, privateKey) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({
-            publicKey: publicKey.export({ format: format, type: "pkcs1" }),
-            privateKey: privateKey.export({ format: format, type: "pkcs1" }),
-          });
-        }
-      });
-    });
+function generateKeyPairRSA() {
+   
+      const rsa = new NodeRSA({b: 2048});
+      
+      return ({
+        privateKey: rsa.exportKey("pkcs1"),
+        publicKey: rsa.exportKey("pkcs1-public")
+      })
   }
 
 /**
  * build an ECDSA keypair using the sect571r1 curve. These keys will be used to sign and verify the authenticity of messages by the `ConnectionWrapper`
- * @returns a public and a private key in pem format.
+ * @returns a public and a private key.
  */
 async function generateKeyPairECDSA(): Promise<{
   publicKey: string,
   privateKey: string,
 }> {
   return new Promise((resolve, reject) => {
-    crypto.generateKeyPair('ec', {
-      namedCurve: curve,
-    }, (err, publicKey, privateKey) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({
-          publicKey: publicKey.export({
-            format: format, type: "spki"
-          }) as string,
-          privateKey: privateKey.export({
-            format: format, type: "sec1"
-          }) as string
-        });
-      }
-    });
+    const priv = generatePrivateECDSA();
+    const pub = getPublicECDSA(priv);
+
+    resolve({
+      privateKey: priv.toString("base64"),
+      publicKey: pub.toString("base64")
+    })
   });
 }
 
@@ -96,11 +78,11 @@ async function generateClientKeys(server_key: string, ca_keys: any[], id: string
     } as PrivateClientKey,
     publicKey: {
       data_key: {
-        key: pub_data as string,
+        key: pub_data,
         signatures: {}
       },
       sign_key: {
-        key: publicKey as string,
+        key: publicKey,
         signatures: {}
       },
       id

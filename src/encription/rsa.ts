@@ -1,13 +1,14 @@
-import { privateDecrypt, publicEncrypt } from "crypto";
+import NodeRSA from "node-rsa";
 import { Buffer } from "buffer";
 import { KeyObject } from "../types";
 
-function encript_rsa(toEncrypt: Buffer, key: KeyObject) {
-    return publicEncrypt(key, toEncrypt);
+
+function encript_rsa(toEncrypt: Buffer, key: NodeRSA) {
+    return key.encrypt(toEncrypt)
 };
 
-function decript_rsa(toDecrypt: Buffer, key: KeyObject) {
-    return privateDecrypt(key, toDecrypt);
+function decript_rsa(toDecrypt: Buffer, key: NodeRSA) {
+    return key.decrypt(toDecrypt)
 };
 
 export { encript_rsa, decript_rsa }
