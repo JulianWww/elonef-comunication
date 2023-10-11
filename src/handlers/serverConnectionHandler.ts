@@ -83,6 +83,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
     }
 
     private on_connection = (ws: WebSocket) => {
+        console.log("open connection")
         const con_state = new ConnectionState();
         ws.addEventListener("message", this.on_message(ws, con_state));
         this.authanticate(ws, con_state);

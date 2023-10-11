@@ -8,8 +8,7 @@ const key = {
   "sign_key": {
     "key": "BI2VJkAembsuvCvhyqIx2ZWs29ZW7/3/HcHlXd2pLK+tZv5YEnDzT6apjfkaCr5K39dhaJAzUXxghRjVDVn95MY=",
     "signatures": {}
-  },
-  "id": "d"
+  }
 }
 
 
