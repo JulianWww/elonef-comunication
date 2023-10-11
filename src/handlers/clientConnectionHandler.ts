@@ -59,14 +59,14 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param address the address of the server to connect to.
      * @param priv_key the private key used to authenticate the user, sign data and get data points.
      */
-    constructor(address: string, priv_key: PrivateClientKey) {
+    constructor(sock: WebSocket, priv_key: PrivateClientKey) {
         super();
 
         this.sign_key = import_private(priv_key.sign_key);
         this.data_key = import_private(priv_key.data_key);
         this.uid = priv_key.uid;
         
-        this.sock = new WebSocket(address);
+        this.sock = sock
         this.sock.addEventListener("message", this.get_data_from_server);
 
         this.make_ready = () => 1;

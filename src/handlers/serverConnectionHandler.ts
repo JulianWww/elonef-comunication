@@ -1,12 +1,12 @@
 import { randomBytes } from "crypto";
 import { PublicClientKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
-import { WebSocketServer, WebSocket, MessageEvent } from "ws";
+import { WebSocket, MessageEvent } from "ws";
 import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, uuid, uuid_size } from "../encoding";
 import { import_public } from "../keys";
 import { unsafe_error, verify_nonstreamable } from "../encription/sign";
 import { stringify, toKeyMapWithValue, to_byte } from "../utility";
-import { nothing } from "../types";
+import { nothing } from "../types"
 import { Buffer } from "buffer";
 
 
@@ -32,7 +32,6 @@ class ConnectionState {
  * It uses callback lumbdas to handle data requests to the database and the server. See constructor for infomation about these callback lambdas.
  */
 export class ServerConnectionHandler extends ConnectionHandler {
-    private wsServer: WebSocketServer;
     private get_pub_key: (id: string) => Promise<PublicClientKey | nothing>;
     private get_chat_key: (chat_id: string, key_id: string) => Promise<Record<string, string> | nothing>;
     private get_chat_newest_chat_key: (chat_id: string) => Promise<string | nothing>;
@@ -50,9 +49,6 @@ export class ServerConnectionHandler extends ConnectionHandler {
             get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>,
         ) {
         super();
-
-        this.wsServer = new WebSocketServer(server_options);
-        this.wsServer.on("connection", this.on_connection);
 
         this.get_pub_key = get_pub_key;
         this.get_chat_key = get_chat_key;
@@ -82,7 +78,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
         con_state.uid = user_id;
     }
 
-    private on_connection = (ws: WebSocket) => {
+    public on_connection = (ws: WebSocket) => {
         console.log("open connection")
         const con_state = new ConnectionState();
         ws.addEventListener("message", this.on_message(ws, con_state));

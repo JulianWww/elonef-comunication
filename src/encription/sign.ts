@@ -7,7 +7,7 @@ import { Buffer } from "buffer";
 
 
 async function sha512(data: Buffer) {
-    return Buffer.from(await hash(data), "hex")
+    return data
 }
 
 /**
