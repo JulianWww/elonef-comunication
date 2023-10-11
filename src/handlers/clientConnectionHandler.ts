@@ -1,7 +1,8 @@
 import { randomBytes } from "crypto";
 import { PrivateClientKey, SignedKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
-import { WebSocket, MessageEvent } from "isomorphic-ws";
+import { WebSocket } from "isomorphic-ws";
+import { MessageEvent } from "ws";
 import { import_private, import_public } from "../keys";
 import { sign, sign_nonstreamable, verifyAndRaiseError } from "../encription/sign";
 import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToString, bufferToStringArray, numberToBuffer, stringToBuffer, uuid_size } from "../encoding";
