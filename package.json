@@ -45,7 +45,6 @@
     "buffer": "^6.0.3",
     "crypto-hash": "^2.0.1",
     "eccrypto": "^1.1.6",
-    "isomorphic-ws": "^5.0.0",
     "node-cache": "^5.1.2",
     "node-rsa": "^1.1.1",
     "randombytes": "^2.1.0",
