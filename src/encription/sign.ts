@@ -1,4 +1,3 @@
-import jsSHA from "jssha";
 import BufferReader from "../encoding/bufferReader";
 import { DataModificationError } from "../erros";
 import { sign as _sign, verify as _verify } from "eccrypto";
