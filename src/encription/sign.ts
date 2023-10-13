@@ -70,6 +70,7 @@ async function verify(reader: BufferReader, key: Buffer) {
  */
 async function verifyAndRaiseError(reader: BufferReader, key: Buffer) {
     const { safe, data, } = await verify(reader, key);
+    console.log(data)
     if (!safe){
         throw unsafe_error;
     }

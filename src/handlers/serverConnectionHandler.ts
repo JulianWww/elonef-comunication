@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { PublicClientKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
 import { WebSocket, MessageEvent } from "ws";
-import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, uuid, uuid_size } from "../encoding";
+import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, numberToBuffer, stringToBuffer, uuid, uuid_size } from "../encoding";
 import { import_public } from "../keys";
 import { unsafe_error, verify_nonstreamable } from "../encription/sign";
 import { stringify, toKeyMapWithValue, to_byte } from "../utility";
@@ -38,7 +38,6 @@ export class ServerConnectionHandler extends ConnectionHandler {
     private get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>;
 
     constructor(
-            server_options: Record<string, any>,
             get_pub_key: (id: string) => Promise<PublicClientKey | nothing>,
             get_chat_key: (chat_id: string, key_id: string) => Promise<Record<string, string> | nothing>,
             get_chat_newest_chat_key: (chat_id: string) => Promise<string | nothing>,
@@ -58,7 +57,6 @@ export class ServerConnectionHandler extends ConnectionHandler {
 
     private async authanticate(ws: WebSocket, con_state: ConnectionState) {
         const data = randomBytes(1024);
-        console.log(data);
         const reader = new BufferReader(
             await this.send(ws, data, ConnectionHandler.AUTH, false)
         );
@@ -75,6 +73,11 @@ export class ServerConnectionHandler extends ConnectionHandler {
         }
         con_state.authenticated = true;
         con_state.uid = user_id;
+        
+        ws.send(Buffer.concat([
+            uuid(),
+            to_byte(16),
+        ]))
     }
 
     public on_connection = (ws: WebSocket) => {
@@ -97,7 +100,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
             return await this.get_newest_chat_key(message, userid);
         }
         else if (type == 19) {
-            await this.add_message_handler(message);
+            await this.add_message_handler(message, userid);
         }
         else if (type == 20) {
             return await this.get_signature_keys_handler(message);
@@ -154,8 +157,8 @@ export class ServerConnectionHandler extends ConnectionHandler {
         ) as Record<string, string>;
         const key_id = uuid().toString("base64");
 
-        this.set_chat_key(chat_id, key_id, key)
-        return to_byte(1);
+        await this.set_chat_key(chat_id, key_id, key)
+        return Buffer.from("")
     }
 
     private async get_chat_key_handler(message: Buffer, userid: string) {
@@ -190,10 +193,16 @@ export class ServerConnectionHandler extends ConnectionHandler {
         ])
     }
 
-    private async add_message_handler(message: Buffer) {
+    private async add_message_handler(message: Buffer, uid: string) {
         const reader = new BufferReader(message);
         const chat_id = bufferToString(reader);
-        const content = reader.readRest().toString("base64");
+        const msg = Buffer.concat([
+            stringToBuffer(uid),                            // the sender id
+            stringToBuffer(reader.readRest()),              // the signed message content
+            numberToBuffer(Date.now() / 1000),              // the upload time
+            to_byte(0)                                      // 0 because why not
+        ])
+        const content = msg.toString("base64");
         this.add_message(chat_id, content);
     }
 

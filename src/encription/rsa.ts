@@ -1,6 +1,6 @@
 import NodeRSA from "node-rsa";
 import { Buffer } from "buffer";
-import { KeyObject } from "../types";
+import forge from "node-forge";
 
 
 function encript_rsa(toEncrypt: Buffer, key: NodeRSA) {

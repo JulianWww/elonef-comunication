@@ -70,14 +70,18 @@ export class ConnectionHandler {
             out = await this.handle_auth(ws, userid, content, authenticated);
         }
         else {
-            out = await this.handle_single_side_messages(ws, userid, content, authenticated, type);
+            const returned = await this.handle_single_side_messages(ws, userid, content, authenticated, type);
+            if (!returned) {
+                return;
+            }
+            out = returned
         }
 
         ws.send(Buffer.concat([uid, to_byte(ConnectionHandler.RETURN), to_byte(1), out]))
     }
 
-    protected async handle_single_side_messages(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean, type: number) {
-        return Buffer.from([]);
+    protected async handle_single_side_messages(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean, type: number): Promise<Buffer | undefined> {
+        return undefined
     }
 
     protected async handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean) {

@@ -2,6 +2,7 @@ import NodeRSA from "node-rsa";
 import { generatePrivate as generatePrivateECDSA, getPublic as getPublicECDSA } from "eccrypto";
 import { toKeyMap } from '../utility';
 import { KeyObject } from "../types";
+import forge from "node-forge";
 
 
 const format = "pem"
@@ -12,6 +13,7 @@ const curve = "secp256k1"
 function generateKeyPairRSA() {
    
       const rsa = new NodeRSA({b: 2048});
+      var keypair = forge.pki.rsa.generateKeyPair(2048, 0x10001);
       
       return ({
         privateKey: rsa.exportKey("pkcs1"),

@@ -44,4 +44,4 @@ function create_aes_key() {
     return randomBytes(32)
 }
 
-export { encript_aes, decript_aes, create_aes_key, randomKey }
+export { encript_aes, decript_aes, create_aes_key, randomKey, randomBytes }
