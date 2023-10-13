@@ -7,7 +7,7 @@ import { Buffer } from "buffer";
 
 
 async function sha512(data: Buffer) {
-    var hash = createHash('sha512')
+    var hash = createHash('sha256')
     hash.update(data) // optional encoding parameter
     return hash.digest()
 }
