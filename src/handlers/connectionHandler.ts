@@ -73,7 +73,7 @@ export class ConnectionHandler {
             out = await this.handle_single_side_messages(ws, userid, content, authenticated, type);
         }
 
-        ws.send(Buffer.concat([to_byte(1), uid, to_byte(ConnectionHandler.RETURN), out]))
+        ws.send(Buffer.concat([uid, to_byte(ConnectionHandler.RETURN), to_byte(1), out]))
     }
 
     protected async handle_single_side_messages(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean, type: number) {
