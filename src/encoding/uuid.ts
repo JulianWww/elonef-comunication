@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import v4 from "uuid";
 import { Buffer } from "buffer";
 
 /**
@@ -6,7 +6,7 @@ import { Buffer } from "buffer";
  * @returns the UUID in binary form
  */
 function uuid() {
-    return Buffer.from(randomUUID().replaceAll("-", ""), "hex");
+    return Buffer.from(v4().replaceAll("-", ""), "hex");
 }
 
 /**
