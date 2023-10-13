@@ -8,7 +8,7 @@ import { Buffer } from "buffer";
 
 async function sha512(data: Buffer) {
     var hash = createHash('sha512')
-    hash.update('synchronous write') // optional encoding parameter
+    hash.update(data) // optional encoding parameter
     return hash.digest()
 }
 
