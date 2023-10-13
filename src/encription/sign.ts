@@ -2,12 +2,14 @@ import BufferReader from "../encoding/bufferReader";
 import { DataModificationError } from "../erros";
 import { sign as _sign, verify as _verify } from "eccrypto";
 import { bufferToShortNumber, extractDynamicBuffer, shortNumberToBuffer, stringToBuffer } from "../encoding";
-import { sha512 as hash } from "crypto-hash";
+import createHash from "create-hash"
 import { Buffer } from "buffer";
 
 
 async function sha512(data: Buffer) {
-    return data
+    var hash = createHash('sha512')
+    hash.update('synchronous write') // optional encoding parameter
+    return hash.digest()
 }
 
 /**
