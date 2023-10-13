@@ -19,10 +19,8 @@ import { Buffer } from "buffer";
 class ConnectionState {
     constructor() {
         this.authenticated = false;
-        this.auth_data = randomBytes(1024);
     };
     authenticated: boolean;
-    auth_data: Buffer
     uid?: string;
 }
 
@@ -60,6 +58,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
 
     private async authanticate(ws: WebSocket, con_state: ConnectionState) {
         const data = randomBytes(1024);
+        console.log(data);
         const reader = new BufferReader(
             await this.send(ws, data, ConnectionHandler.AUTH, false)
         );
