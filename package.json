@@ -6,7 +6,7 @@
   "module": "lib/index.esm.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "test": "jest --silent=false --detectOpenHandles",
+    "test": "",
     "dev": "clear && yarn pre-pub && python3 -c 'print(\"=\"*200)' && nodejs test/serverTest.js",
     "client": "nodejs test/clientTest.js",
     "cmd-short": "nodejs test/runtest.js",
