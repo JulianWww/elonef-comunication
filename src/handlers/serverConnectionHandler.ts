@@ -65,10 +65,12 @@ export class ServerConnectionHandler extends ConnectionHandler {
         
 
         const key = import_public((await this.get_pub_key(user_id))?.sign_key.key) as Buffer | nothing
+
         if (!key) {
             throw Error("missing public key for user " + user_id);
         }
-        if (!verify_nonstreamable(data, signature, key)) {
+        const safe = await verify_nonstreamable(data, signature, key);
+        if (!safe) {
             throw unsafe_error;
         }
         con_state.authenticated = true;
@@ -81,7 +83,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
     }
 
     public on_connection = (ws: WebSocket) => {
-        console.log("open connection")
+        //console.log("open connection")
         const con_state = new ConnectionState();
         ws.addEventListener("message", this.on_message(ws, con_state));
         this.authanticate(ws, con_state);
@@ -178,12 +180,12 @@ export class ServerConnectionHandler extends ConnectionHandler {
         const chat_id = bufferToString(reader);
         const key_id = await this.get_chat_newest_chat_key(chat_id);
         if (!key_id) {
-            console.log("failed to get chat key id for chat " + chat_id);
+            //console.log("failed to get chat key id for chat " + chat_id);
             return Buffer.from("");
         }
         const key = (await this.get_chat_key(chat_id, key_id));
         if (!key) {
-            console.log("failed to get chat key for chat " + chat_id);
+            //console.log("failed to get chat key for chat " + chat_id);
             return Buffer.from("");
         }
 

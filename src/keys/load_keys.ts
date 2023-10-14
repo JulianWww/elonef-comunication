@@ -3,7 +3,6 @@ import NodeRSA, { Format } from "node-rsa";
 
 
 function import_private(key_data: string | nothing, encoding: Format="pkcs1"){
-    console.log(key_data, encoding)
     if (!key_data) {
         return undefined
     }

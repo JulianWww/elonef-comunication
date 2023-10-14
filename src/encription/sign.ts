@@ -45,7 +45,7 @@ async function sign(data: Buffer, key: Buffer) {
  */
 async function verify_nonstreamable(data: Buffer, sig: Buffer, key: Buffer) {
     const hash = await sha512(data);
-    return _verify(key, hash, sig)
+    return _verify(key, hash, sig).then(() => true).catch(() => false);
 }
 
 /**
@@ -70,7 +70,6 @@ async function verify(reader: BufferReader, key: Buffer) {
  */
 async function verifyAndRaiseError(reader: BufferReader, key: Buffer) {
     const { safe, data, } = await verify(reader, key);
-    console.log(data)
     if (!safe){
         throw unsafe_error;
     }

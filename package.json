@@ -7,7 +7,7 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "test": "jest --silent=false --detectOpenHandles",
-    "cmd": "clear && yarn pre-pub && python3 -c 'print(\"=\"*200)' && nodejs test/serverTest.js",
+    "dev": "clear && yarn pre-pub && python3 -c 'print(\"=\"*200)' && nodejs test/serverTest.js",
     "client": "nodejs test/clientTest.js",
     "cmd-short": "nodejs test/runtest.js",
     "storybook": "storybook dev -p 6006",

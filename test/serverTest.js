@@ -34,7 +34,7 @@ class Pipe {
   }
 
   send(data) {
-    console.log(this.name, data)
+    //console.log(this.name, data)
     this.other.msg_handler({data})
   }
 
@@ -71,7 +71,6 @@ const wss = new ServerConnectionHandler(
     (chat_id, last_idx, lenght) => messages
   )
   .add_api_callback("test/hi", (data, uid) => {
-    console.log(data.toString());
     return Buffer.from("return data");
   });
 
@@ -86,5 +85,5 @@ client.generate_chat_keys(["d", "jonathan"], "test_chat")
 )
 .then(v=> {
   console.log("key_after gen")
-  console.log(messages)
+  console.log(v)
 })

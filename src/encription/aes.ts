@@ -37,7 +37,7 @@ function decript_aes(input: Buffer, key: Buffer) {
     const iv = input.subarray(0, iv_size);
     const data = input.subarray(iv_size);
     const decipher = new aes.ModeOfOperation.ctr(key, new aes.Counter(iv));
-    return decipher.decrypt(data);
+    return Buffer.from(decipher.decrypt(data));
 }
 
 function create_aes_key() {
