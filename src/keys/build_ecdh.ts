@@ -1,8 +1,8 @@
-import { createECDH } from "crypto";
+import { generatePrivate, getPublic, derive } from "eccrypto";
 import { Buffer } from "buffer";
 
 function get_curve() {
-    return createECDH('secp256k1')
+    return generatePrivate()
 }
 
 
@@ -13,10 +13,9 @@ function get_curve() {
  * @param id {string} - the exchange id so that the server can find the right key in its cache.
  */
 async function initalize_dh_key_build(sender: (toSend: Buffer) => Promise<Buffer>) {
-    const curve = get_curve();
-    const key = curve.generateKeys();
-    const other_key = await sender(key);
-    return curve.computeSecret(other_key)
+    const priv_key = get_curve();
+    const other_public_key = await sender(getPublic(priv_key))
+    return derive(priv_key, other_public_key)
 }
 
 /**
@@ -26,10 +25,14 @@ async function initalize_dh_key_build(sender: (toSend: Buffer) => Promise<Buffer
  * @param secret_sing {(secret: Buffer) => void} - a sink that takes the shared secret
  */
 function reciever_dh_key_build(other_key: Buffer, secret_sink: (secret: Buffer) => void) {
-    const curve = get_curve();
-    const key = curve.generateKeys();
-    secret_sink(curve.computeSecret(other_key))
-    return key;
+    const priv_key = get_curve();
+
+    derive(
+        priv_key,
+        other_key,
+    ).then(secret_sink)
+    
+    return getPublic(priv_key);
 }
 
 export { initalize_dh_key_build, reciever_dh_key_build }

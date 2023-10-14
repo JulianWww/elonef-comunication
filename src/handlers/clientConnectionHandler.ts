@@ -1,16 +1,16 @@
 import { randomBytes } from "crypto";
 import { PrivateClientKey, SignedKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
+import { WebSocket, MessageEvent } from "ws";
 import { import_private, import_public } from "../keys";
 import { sign, sign_nonstreamable, verifyAndRaiseError } from "../encription/sign";
-import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToString, bufferToStringArray, numberToBuffer, stringToBuffer, uuid_size } from "../encoding";
+import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, extractDynamicBuffer, numberToBuffer, shortNumberToBuffer, stringToBuffer, uuid_size } from "../encoding";
 import { decript_aes, decript_rsa, encript_aes, encript_rsa } from "../encription";
-import { toKeyMapWithValue } from "../utility";
+import { toKeyMapWithValue, to_byte } from "../utility";
 import { Buffer } from "buffer";
 
-import { KeyObject } from "../types";
+import { KeyObject, Message, byte } from "../types";
 
-type WebSocket = any;
 
 /**
  * a connection handler that will connect to a server running the serverConnectionHandler. It will connect and automatically authenticate the user with the private key provided. It provides the ability to send and receive messages for any chat you are a part of.
@@ -52,6 +52,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * an AES key map used to decript message contents.
      */
     private aes_keys: Map<string, Promise<Buffer>>;
+    private buffer_getter: (data: any) => Promise<Buffer>
 
 
     /**
@@ -59,15 +60,15 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param address the address of the server to connect to.
      * @param priv_key the private key used to authenticate the user, sign data and get data points.
      */
-    constructor(address: string, priv_key: PrivateClientKey) {
+    constructor(sock: WebSocket, priv_key: PrivateClientKey, buffer_getter: (data: any) => Promise<Buffer> = async (v)=> v.data) {
         super();
 
         this.sign_key = import_private(priv_key.sign_key);
         this.data_key = import_private(priv_key.data_key);
         this.uid = priv_key.uid;
         
-        this.sock = new WebSocket(address);
-        this.sock.onmessage(this.get_data_from_server);
+        this.sock = sock
+        this.sock.addEventListener("message", this.get_data_from_server);
 
         this.make_ready = () => 1;
         this.ready = new Promise<void>((resolve, _)=> {
@@ -76,6 +77,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
 
         this.signature_keys = new Map();
         this.aes_keys = new Map();
+        this.buffer_getter = buffer_getter
     }
 
     /**
@@ -86,13 +88,29 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param authenticated dummy if the connection is authenticated.
      * @returns the signature
      */
-    protected handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean): Buffer {
+    protected async handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean): Promise<Buffer> {
         const out = Buffer.concat([
             stringToBuffer(this.uid),
-            sign_nonstreamable(message, this.sign_key)
+            await sign_nonstreamable(message, this.sign_key)
         ]);
-        this.make_ready();
         return out;
+    }
+
+    /**
+     * handles messges that should only be handled on the client side
+     * @param ws the socket
+     * @param userid dummy on the client
+     * @param message the recived data
+     * @param authenticated if the connection is authenticed
+     * @param type type id of the message
+     * @returns 
+     */
+    protected async handle_single_side_messages(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean, type: number): Promise<Buffer | undefined> {
+        if (type == 16) {
+            this.make_ready()
+        }
+        
+        return undefined
     }
 
     /**
@@ -119,8 +137,8 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * handler that populates the static contents for handle_message. this is a callback for when the socket recieves a message from the server.
      * @param data the data recived by the sever
      */
-    protected get_data_from_server = (data: Buffer) => {
-        this.handle_message(this.sock, "", data, true);
+    protected get_data_from_server = async (data: MessageEvent) => {
+        this.handle_message(this.sock, "", await this.buffer_getter(data), true);
     }
 
     /**
@@ -241,7 +259,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
                 )
             )
         )
-        this.send(
+        await this.send(
             this.sock, 
             Buffer.concat([
                 stringToBuffer(chat_id),
@@ -316,25 +334,28 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param message the message to be sent
      * @param chat_id 
      */
-    async send_message(message: Buffer, chat_id: string) {
+    async send_message(message: Buffer, message_type: byte, chat_id: string) {
         const { uuid, key } = await this.get_newest_chat_key(chat_id);
-        const enc = sign(
-            encript_aes(
-                Buffer.from(
-                    message
-                ), 
-                key
-            ), 
+        const enc = await sign(
+            Buffer.concat([
+                numberToBuffer(Date.now() / 1000),  // time sent
+                to_byte(message_type),              // the message type byte
+                uuid,                               // the decryption key uuid
+                encript_aes(                        // the encrypted message
+                    Buffer.from(
+                        message
+                    ), 
+                    key
+                )
+                
+            ]),
             this.sign_key
         );
 
-        
         this.send(
             this.sock,
             Buffer.concat([
                 stringToBuffer(chat_id),
-                uuid,
-                stringToBuffer(this.uid),
                 enc
             ]),
             19
@@ -366,25 +387,52 @@ export class ClientConnectionHandler extends ConnectionHandler {
             .map(
                 (buf: Buffer) => new BufferReader(buf)
             )
-            .map(
-                (buf: BufferReader) => [
-                    buf.read(16), 
-                    bufferToString(buf), 
-                    new BufferReader(buf.readRest())
-                ] as [Buffer, string, BufferReader]
-            )
-            .map(async ([key_uid, user_name, data]: [ Buffer, string, BufferReader]) => { 
+            .map((reader: BufferReader) => {
                 return {
-                    user_name, 
-                    content: decript_aes(
-                        verifyAndRaiseError(
-                            data, 
-                            await this.get_signature_key(user_name)
-                        ), 
-                        await this.get_chat_key(chat_id, key_uid)
-                    )
-                    .toString()
+                    sender_id: bufferToString(reader),
+                    signed_block: extractDynamicBuffer(reader),
+                    upload_time: bufferToNumber(reader),
+                    reactions: reader.readRest()
                 }
+            })
+            .map(async (data) => {
+                const key = await this.get_signature_key(data.sender_id)
+
+                const verified = new BufferReader(
+                    await verifyAndRaiseError(
+                        new BufferReader(
+                            data.signed_block
+                        ),
+                        key
+                    )
+                );
+                return {
+                    ...data,
+                    sent_time: bufferToNumber(verified),
+                    msg_type: verified.read(1)[0],
+                    aes_key_id: verified.read(uuid_size),
+                    data: verified.readRest(),
+                }
+            })
+            .map(async (data_promise) => {
+                const data = await data_promise;
+                const key = await this.get_chat_key(chat_id, data.aes_key_id);
+
+                return {
+                    ...data,
+                    data: decript_aes(data.data, key)
+                }
+            })
+            .map(async (data_promise) => {
+                const data = await data_promise;
+                return {
+                    sender_id: data.sender_id,
+                    reactions: data.reactions,
+                    upload_time: data.upload_time,
+                    sent_time: data.sent_time,
+                    msg_type: data.msg_type,
+                    data: data.data,
+                } as Message;
             })
         )
         return messages;

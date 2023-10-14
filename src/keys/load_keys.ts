@@ -1,23 +1,20 @@
-import { createPrivateKey, createPublicKey } from "crypto";
 import { nothing } from "../types";
-import { KeyObject } from "../types";
+import NodeRSA, { Format } from "node-rsa";
 
 
-function import_private(key_data: string | KeyObject ){
-    if (typeof key_data !== "string") {
-        return key_data;
+function import_private(key_data: string | nothing, encoding: Format="pkcs1"){
+    if (!key_data) {
+        return undefined
     }
-    return createPrivateKey(key_data);
+    if (key_data[0] === "-") {
+        const rsa = new NodeRSA({b: 2048})
+        return rsa.importKey(key_data, encoding)
+    }
+    return Buffer.from(key_data, "base64")
 }
 
-function import_public(key_data: string | KeyObject | nothing) {
-    if (! key_data) {
-        return null;
-    }
-    if (typeof key_data !== "string") {
-        return key_data;
-    }
-    return createPublicKey(key_data);
+function import_public(key_data: string | nothing) {
+    return import_private(key_data, "pkcs1-public")
 }
 
 export { import_private, import_public }

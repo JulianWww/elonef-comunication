@@ -1,12 +1,18 @@
-import { randomUUID } from "crypto";
+import { v4 } from "uuid";
 import { Buffer } from "buffer";
+import { randomBytes } from "../encription/aes"
 
 /**
  * For efficency reasons the UUIDv4 is converted to a binary buffer and not transmitted with hexadecimansl
  * @returns the UUID in binary form
  */
 function uuid() {
-    return Buffer.from(randomUUID().replaceAll("-", ""), "hex");
+    try {
+        return Buffer.from(v4().replaceAll("-", ""), "hex");
+    }
+    catch {
+        return randomBytes(uuid_size)
+    }
 }
 
 /**

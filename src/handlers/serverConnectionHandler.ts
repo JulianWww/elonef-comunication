@@ -1,12 +1,12 @@
 import { randomBytes } from "crypto";
 import { PublicClientKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
-import { WebSocketServer, WebSocket, MessageEvent } from "ws";
-import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, uuid, uuid_size } from "../encoding";
+import { WebSocket, MessageEvent } from "ws";
+import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, numberToBuffer, stringToBuffer, uuid, uuid_size } from "../encoding";
 import { import_public } from "../keys";
 import { unsafe_error, verify_nonstreamable } from "../encription/sign";
 import { stringify, toKeyMapWithValue, to_byte } from "../utility";
-import { nothing } from "../types";
+import { nothing } from "../types"
 import { Buffer } from "buffer";
 
 
@@ -19,10 +19,8 @@ import { Buffer } from "buffer";
 class ConnectionState {
     constructor() {
         this.authenticated = false;
-        this.auth_data = randomBytes(1024);
     };
     authenticated: boolean;
-    auth_data: Buffer
     uid?: string;
 }
 
@@ -32,7 +30,6 @@ class ConnectionState {
  * It uses callback lumbdas to handle data requests to the database and the server. See constructor for infomation about these callback lambdas.
  */
 export class ServerConnectionHandler extends ConnectionHandler {
-    private wsServer: WebSocketServer;
     private get_pub_key: (id: string) => Promise<PublicClientKey | nothing>;
     private get_chat_key: (chat_id: string, key_id: string) => Promise<Record<string, string> | nothing>;
     private get_chat_newest_chat_key: (chat_id: string) => Promise<string | nothing>;
@@ -41,7 +38,6 @@ export class ServerConnectionHandler extends ConnectionHandler {
     private get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>;
 
     constructor(
-            server_options: Record<string, any>,
             get_pub_key: (id: string) => Promise<PublicClientKey | nothing>,
             get_chat_key: (chat_id: string, key_id: string) => Promise<Record<string, string> | nothing>,
             get_chat_newest_chat_key: (chat_id: string) => Promise<string | nothing>,
@@ -50,9 +46,6 @@ export class ServerConnectionHandler extends ConnectionHandler {
             get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>,
         ) {
         super();
-
-        this.wsServer = new WebSocketServer(server_options);
-        this.wsServer.on("connection", this.on_connection);
 
         this.get_pub_key = get_pub_key;
         this.get_chat_key = get_chat_key;
@@ -71,18 +64,26 @@ export class ServerConnectionHandler extends ConnectionHandler {
         const signature = reader.readRest();
         
 
-        const key = import_public((await this.get_pub_key(user_id))?.sign_key.key)
+        const key = import_public((await this.get_pub_key(user_id))?.sign_key.key) as Buffer | nothing
+
         if (!key) {
             throw Error("missing public key for user " + user_id);
         }
-        if (!verify_nonstreamable(data, signature, key)) {
+        const safe = await verify_nonstreamable(data, signature, key);
+        if (!safe) {
             throw unsafe_error;
         }
         con_state.authenticated = true;
         con_state.uid = user_id;
+        
+        ws.send(Buffer.concat([
+            uuid(),
+            to_byte(16),
+        ]))
     }
 
-    private on_connection = (ws: WebSocket) => {
+    public on_connection = (ws: WebSocket) => {
+        //console.log("open connection")
         const con_state = new ConnectionState();
         ws.addEventListener("message", this.on_message(ws, con_state));
         this.authanticate(ws, con_state);
@@ -101,7 +102,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
             return await this.get_newest_chat_key(message, userid);
         }
         else if (type == 19) {
-            await this.add_message_handler(message);
+            await this.add_message_handler(message, userid);
         }
         else if (type == 20) {
             return await this.get_signature_keys_handler(message);
@@ -158,8 +159,8 @@ export class ServerConnectionHandler extends ConnectionHandler {
         ) as Record<string, string>;
         const key_id = uuid().toString("base64");
 
-        this.set_chat_key(chat_id, key_id, key)
-        return to_byte(1);
+        await this.set_chat_key(chat_id, key_id, key)
+        return Buffer.from("")
     }
 
     private async get_chat_key_handler(message: Buffer, userid: string) {
@@ -179,12 +180,12 @@ export class ServerConnectionHandler extends ConnectionHandler {
         const chat_id = bufferToString(reader);
         const key_id = await this.get_chat_newest_chat_key(chat_id);
         if (!key_id) {
-            console.log("failed to get chat key id for chat " + chat_id);
+            //console.log("failed to get chat key id for chat " + chat_id);
             return Buffer.from("");
         }
         const key = (await this.get_chat_key(chat_id, key_id));
         if (!key) {
-            console.log("failed to get chat key for chat " + chat_id);
+            //console.log("failed to get chat key for chat " + chat_id);
             return Buffer.from("");
         }
 
@@ -194,10 +195,16 @@ export class ServerConnectionHandler extends ConnectionHandler {
         ])
     }
 
-    private async add_message_handler(message: Buffer) {
+    private async add_message_handler(message: Buffer, uid: string) {
         const reader = new BufferReader(message);
         const chat_id = bufferToString(reader);
-        const content = reader.readRest().toString("base64");
+        const msg = Buffer.concat([
+            stringToBuffer(uid),                            // the sender id
+            stringToBuffer(reader.readRest()),              // the signed message content
+            numberToBuffer(Date.now() / 1000),              // the upload time
+            to_byte(0)                                      // 0 because why not
+        ])
+        const content = msg.toString("base64");
         this.add_message(chat_id, content);
     }
 
