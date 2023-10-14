@@ -1,23 +1,61 @@
-const { ServerConnectionHandler, ClientConnectionHandler } = require('../lib');
-
-const key = {
-  "data_key": {
-    "key": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAs0GiTYqcw7NFkWEZXUMGGh8pDc2HUwYx+60jDa0Af6R1VGu+KZiy\nA6bXKPDUmCoRftvhOuGaOq8d8FL28ybEW/xBOsIAtJtIN4ZoD0ME0VvTCMm1Vz8w\nVqYrI0vFftlZoslKqRwKXe2cPIEBzkB6fJrwsAkUczxowzc7N9DHqWd4CESJdpzQ\n4ijr2oi0YhytWKNpjTwi9WapS2xNUbYMRquxP2QVAFvKg4nO+jtZkxMFMAelhuxo\n2AQ8/cBAUw8uDI+jfop4OUux21xhUvkHgG0i1OObsAulV8LfqTFlE+tnlzKfzfyU\nS2XTxXRiuiUMLCs9nlSgLBxkqpfJbPBJIwIDAQAB\n-----END RSA PUBLIC KEY-----",
-    "signatures": {}
-  },
-  "sign_key": {
-    "key": "BI2VJkAembsuvCvhyqIx2ZWs29ZW7/3/HcHlXd2pLK+tZv5YEnDzT6apjfkaCr5K39dhaJAzUXxghRjVDVn95MY=",
-    "signatures": {}
-  }
-}
+const { ServerConnectionHandler, ClientConnectionHandler, generateClientKeys } = require('../lib');
 
 const client_key = {
-  "sign_key": "3l2daxxHqgPpZ5rPCZfsXKEZ+HlT3POAtlFITpsC0P8=",
-  "data_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAs0GiTYqcw7NFkWEZXUMGGh8pDc2HUwYx+60jDa0Af6R1VGu+\nKZiyA6bXKPDUmCoRftvhOuGaOq8d8FL28ybEW/xBOsIAtJtIN4ZoD0ME0VvTCMm1\nVz8wVqYrI0vFftlZoslKqRwKXe2cPIEBzkB6fJrwsAkUczxowzc7N9DHqWd4CESJ\ndpzQ4ijr2oi0YhytWKNpjTwi9WapS2xNUbYMRquxP2QVAFvKg4nO+jtZkxMFMAel\nhuxo2AQ8/cBAUw8uDI+jfop4OUux21xhUvkHgG0i1OObsAulV8LfqTFlE+tnlzKf\nzfyUS2XTxXRiuiUMLCs9nlSgLBxkqpfJbPBJIwIDAQABAoIBAH2mOhBEYxJCbTc0\nasUWoAZbZTmJoZuusgaKHBIP/FN8gcnFJCygHde1cQf/l+V5R342vi+5x5Pu//tf\nDD7wI5+euFJpfnkah4p0KijYf14JEWoNiZE4d7elDoPVLwB1dgFHO5BCWXnxfhxj\nCVL7m2AQcznRg4YrB/wekOHU9L9m2ryHSTjdP27XGE068OaTTl+5mzYga34UiXmY\nVZJAHO9Nn+YmCd5G4/IaYU93c/lFBFXskZbYa0errPTuwbdhwWeTiyfymABpYaFD\na21k2QKQIwrqwxEGNKxyiyEB4bTqpUm65Ay+ehiWOXGGv01V4RXkWinG410UP7jD\nNWj+mqECgYEA9AMmn4ZnXUdoI6hn1sqprYvpiOjX+iYwiTWo8cSyk4RQfORXhwVZ\nez8m59lmHmNZ4SUqw9HNO9zCw1NsHUGb3C55eMp0gmhEOHswT2xiw8d7AkypnBPD\nh0/i5DsPoOZ+gGsI6NW3oBsVDK96kCdkrA8AtMSAJ83D2DL8OWxCOskCgYEAvBAS\nnRyhyKTTWumtDWthAVImAWlJ+D7xyKujG3jriSsnZMuKXUuesLesUjyorL5S5QJ3\nGqRKxqpplZH3XqaoW0zg18XgFVdm+rQ21SRue/GDhZIrXVV01aYFra6Xcnzpr7jF\n5bGPRF/WheLlKlff5HeueWQ0wrV7tUmSXdX4bosCgYEA3FE//UdYasN/hrqWTzyb\nKYQrbx91anoy1qBpkynbZxBPsARn9xRgb8Rcd3g2GPfxfjSVwUrcONGh1MSs2FmV\nxZ78tJBv1BMajbjErOGa51Rkf3YCqla586Gwpguhl9ClpYN+/uOAsYHiZprGWgQH\nhMbjB1Rotge2ba3TSHGz9ukCgYEAmnRU5UZ7tS9yCsu6fjf/nrcaUbRotQL1Twtw\nVYLVZ33Sx9zHUeJmfdsMIyqAmgdiS4Xfzji61TlmqBoO4WTdBsc4Lt7sMHrtL+BM\n3HckapUroMsw5GHoKARHy6KF7dibkN+fYQuYj95qcOGttz4euyR0XmynTHcDGBxJ\notm2RQsCgYBVksEFbucu8uNil42rIED5XeS52tLxAM8RVpFX5bw0ZGAj91gLMtsI\nDeqTqSuKgtyuQIo/XdLVGO2mfZFjpc02qB+zL7sAnEfjXURbcE6W/5S/hxf3vIUV\nKf+SF0jZtbj0pCkGveeQcC/7RXDkEbrCTCh2ek52JG0UGTiKasYUZw==\n-----END RSA PRIVATE KEY-----",
-  "server_key": "",
-  "ca_keys": {},
-  "uid": "d"
+  sign_key: 'KMe70BSIf4rSl6xJ85yKs01YLPrL0ipRT+GKwzCORKY=',
+  data_key: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
+    'MIIEpQIBAAKCAQEA5zCHHTLAnOqKv20X374YZtWj3c9HAE26dIcYZiQ6RwFReZkk\r\n' +
+    'sIg6ReYx0IAZR/QZg+Uy8Ul0S+44SqpYd0zV/UFZX/Rr6F09+rm8JjzVMOmxAzWl\r\n' +
+    'MpfZkyUBc9239nHy5aWZOm8HzQ8AyAmQq3llxMp1Q8esITZ9LHx3285cj1q51fsV\r\n' +
+    'Pyq6oQOSpVGyNnjoRLetavPNN6PA1HF18V+pEDcwMoHygKRgdVP0oBboA/uMKjmi\r\n' +
+    'kK3r6jbXGm1OqYRdyiF1X7j8rPMmMhPB0NttQwOeNg99AAOQpQGWzuyMyLd5x8u7\r\n' +
+    'si4brC5zlDT9nRO5RZjC2RuBkbWhoVWHhHrUVwIDAQABAoIBAAC3S2z5An0BCHGD\r\n' +
+    'GweNjdh9t8f/FFOUHt+RCfSruZuPKiMA/G5PNtc9wMZ45fKCxG9d9n66bVXDHr5+\r\n' +
+    'nNlF7aFBftuB9z+3F0pqBQDqZG0swCtzLzmuNGU8H93mdRQkfRcPLLoKqmalduI3\r\n' +
+    '+Agc34R/B+UFcpLZmasy2xq2jHiVPo4ligXKvL9ML9/M25Ug6kywuEa3V9gAgaUh\r\n' +
+    '5ivpWJ6s9GIzT3xorscFKNwACVKpPUgP7ZYkHsZRUcWX4eMFdV9Yh7i0jUuQ6FoC\r\n' +
+    'XyFkoQ/ObXQqd/LRQQUlAEi5sFp+QxxnbpYEwMWZ1ef5qdvKJgRwaqHlFitL/2Sx\r\n' +
+    'MG5wBIECgYEA6+O+bLkEnqoG9YPoAu9yau7nk/BmHTjpFc4mO3+i2mUzAST5jvgD\r\n' +
+    'Pszb921zGsP/gAitzWUpPtSnOuvrC8QW6o/1MYBUHsE/A6EUAinjLZ9ecwxSRhCL\r\n' +
+    'JwdWDfOm35ia4V/HqxUak5KQSodH4I9JOJ6uB7kObSQouDugVuoNdBcCgYEA+uY0\r\n' +
+    'rUqrw/3RCHSilIcLDgToAYZntBB3SMzFEa53hwcgRxoXSgBWpBrdPmH6rtcW7VHZ\r\n' +
+    '6iTmroizCIWNjECGZjh5UYzD+59KXxKUUtF0rpArPKxPQj8i2bUlrbf4azEEVFZ5\r\n' +
+    'VigR/n6OEKoCC04MIeU2qG8Qvi1a6Um+0vA6icECgYEAk6xr1hyt67Z9zM3bPZsx\r\n' +
+    'ggg2KcNh6gFqyh/Yh38MMLUSDTFcmkhhn7sYKfn3CVaSaVEFnYQrIg528sgmyaLk\r\n' +
+    'xcuBsI+qGebY0CjTIdefRTx0IIoiJ4LL2o8ZLHrQiUI8E8OmeFAp5yDl/AJc2RRa\r\n' +
+    'vnt4b5VGlsUASPXrFv5HldkCgYEAu8QIbB/TyAttolxXR7yAo288ideiSHmCK7ND\r\n' +
+    'UGY3AZBtsYhvIWx7arjIFmWRC8PgXp7A7J/NG5UmFxyLwAiSDHH7KPKlwOuG5vuq\r\n' +
+    'kQg7wGAYW4HAlx1U4YTVu9pQSTgXu14z1CyMut7PRt1URk2UetFlRExKRWj//lK4\r\n' +
+    'QniR9oECgYEAm4rarX3jwARh5jAjlF67j/cwSTsJL7qzCf1tzTsZjZm1kZq7pOxx\r\n' +
+    'BmCPqpgGqBa56vCtbKuaQ7F5sJNlcUIK3TceIRHLr12TYBQATmW0k5DAntplZprH\r\n' +
+    'MnZOGgFzJ08v8IkmNsYe/CtywsLKvwhrlS8UiJbjqF+5iMrioevxyZg=\r\n' +
+    '-----END RSA PRIVATE KEY-----\r\n',
+  server_key: 'SERVER_KEY',
+  ca_keys: {},
+  uid: 'd'
 }
+
+
+const key = {
+  data_key: {
+    key: '-----BEGIN PUBLIC KEY-----\r\n' +
+      'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5zCHHTLAnOqKv20X374Y\r\n' +
+      'ZtWj3c9HAE26dIcYZiQ6RwFReZkksIg6ReYx0IAZR/QZg+Uy8Ul0S+44SqpYd0zV\r\n' +
+      '/UFZX/Rr6F09+rm8JjzVMOmxAzWlMpfZkyUBc9239nHy5aWZOm8HzQ8AyAmQq3ll\r\n' +
+      'xMp1Q8esITZ9LHx3285cj1q51fsVPyq6oQOSpVGyNnjoRLetavPNN6PA1HF18V+p\r\n' +
+      'EDcwMoHygKRgdVP0oBboA/uMKjmikK3r6jbXGm1OqYRdyiF1X7j8rPMmMhPB0Ntt\r\n' +
+      'QwOeNg99AAOQpQGWzuyMyLd5x8u7si4brC5zlDT9nRO5RZjC2RuBkbWhoVWHhHrU\r\n' +
+      'VwIDAQAB\r\n' +
+      '-----END PUBLIC KEY-----\r\n',
+    signatures: {}
+  },
+  sign_key: {
+    key: 'BKXrSlEgv6tIUDyCLWZuEa4CqxGTNEY/hZft3mXGBZQc6xqJLi8SffGhMoxKNIO8csO7QbJ2e0otBN4pO5WCPXc=',
+    signatures: {}
+  },
+  id: 'd'
+}
+
+//generateClientKeys("SERVER_KEY", [], "denanu").then(console.log)
 
 class Pipe {
   msg_handler
@@ -48,8 +86,6 @@ const c2s = new Pipe("c => s");
 s2c.other = c2s
 c2s.other = s2c
 
-//console.log(generateClientKeys("", [], "d").then(key => console.log(JSON.stringify(key, null, 2))))
-
 var chat_key = new Map();
 var messages = [];
 var chat_key_id = ""
@@ -76,14 +112,15 @@ const wss = new ServerConnectionHandler(
 
 wss.on_connection(s2c)
 
-client.generate_chat_keys(["d", "jonathan"], "test_chat")
+client.generate_chat_keys(["denanu", "d"], "test_chat")
 .then(v =>
-  client.send_message("hello this is me", 0, "test_chat")
+  client.send_message("hello this is me :)", 0, "test_chat")
 )
+
 .then(v=> 
   client.get_message("test_chat", 0, 100)
 )
 .then(v=> {
   console.log("key_after gen")
-  console.log(v)
+  console.log(v.map(msg => {return {...msg, data: msg.data.toString()}}))
 })

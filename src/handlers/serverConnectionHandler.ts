@@ -1,4 +1,3 @@
-import { randomBytes } from "crypto";
 import { PublicClientKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
 import { WebSocket, MessageEvent } from "ws";
@@ -8,6 +7,7 @@ import { unsafe_error, verify_nonstreamable } from "../encription/sign";
 import { stringify, toKeyMapWithValue, to_byte } from "../utility";
 import { nothing } from "../types"
 import { Buffer } from "buffer";
+import { randomBytes } from "../encription/aes";
 
 
 /**
@@ -57,13 +57,14 @@ export class ServerConnectionHandler extends ConnectionHandler {
 
     private async authanticate(ws: WebSocket, con_state: ConnectionState) {
         const data = randomBytes(1024);
+        
         const reader = new BufferReader(
             await this.send(ws, data, ConnectionHandler.AUTH, false)
         );
         const user_id = bufferToString(reader);
         const signature = reader.readRest();
         
-
+        
         const key = import_public((await this.get_pub_key(user_id))?.sign_key.key) as Buffer | nothing
 
         if (!key) {
@@ -83,7 +84,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
     }
 
     public on_connection = (ws: WebSocket) => {
-        //console.log("open connection")
+        console.log("open connection")
         const con_state = new ConnectionState();
         ws.addEventListener("message", this.on_message(ws, con_state));
         this.authanticate(ws, con_state);
@@ -179,6 +180,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
         const reader = new BufferReader(message);
         const chat_id = bufferToString(reader);
         const key_id = await this.get_chat_newest_chat_key(chat_id);
+
         if (!key_id) {
             //console.log("failed to get chat key id for chat " + chat_id);
             return Buffer.from("");

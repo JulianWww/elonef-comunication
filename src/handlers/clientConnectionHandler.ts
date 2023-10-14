@@ -8,8 +8,9 @@ import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber,
 import { decript_aes, decript_rsa, encript_aes, encript_rsa } from "../encription";
 import { toKeyMapWithValue, to_byte } from "../utility";
 import { Buffer } from "buffer";
+import forge from "node-forge";
 
-import { KeyObject, Message, byte } from "../types";
+import { Message, byte } from "../types";
 
 
 /**
@@ -25,11 +26,11 @@ export class ClientConnectionHandler extends ConnectionHandler {
     /**
      * the private key used to authenticate the user and sign data.
      */
-    private sign_key: KeyObject;
+    private sign_key: Buffer;
     /**
      * the public key used to encrypt data.
      */
-    private data_key: KeyObject;
+    private data_key: forge.pki.rsa.PrivateKey;
     /**
      * the UUID of the user (not a name but an id).
      */
@@ -47,7 +48,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
     /**
      * the cache of public keys used for optimization by avoiding asking the server for the public key for every message. This map is used by the get_keys method and keys are automatically added to the cache. All keys in the cache are verified, assuming we had verification witch is still WIP
      */
-    private signature_keys: Map<string, Promise<KeyObject>>;
+    private signature_keys: Map<string, Promise<Buffer | forge.pki.PublicKey>>;
     /**
      * an AES key map used to decript message contents.
      */
@@ -63,8 +64,8 @@ export class ClientConnectionHandler extends ConnectionHandler {
     constructor(sock: WebSocket, priv_key: PrivateClientKey, buffer_getter: (data: any) => Promise<Buffer> = async (v)=> v.data) {
         super();
 
-        this.sign_key = import_private(priv_key.sign_key);
-        this.data_key = import_private(priv_key.data_key);
+        this.sign_key = import_private(priv_key.sign_key) as Buffer;
+        this.data_key = import_private(priv_key.data_key) as forge.pki.rsa.PrivateKey;
         this.uid = priv_key.uid;
         
         this.sock = sock
@@ -160,14 +161,14 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @returns the keys by user.
      */
     private async get_key(users: string[], id: number) {
-        const unkown_users: [string, (key: KeyObject)=>void][] = []
+        const unkown_users: [string, (key: Buffer | forge.pki.PublicKey)=>void][] = []
 
         // check for known keys and add the others to the unknown users list.
         const known_keys = await Promise.all(users
-            .map((user) => [user, this.signature_keys.get(id + user)] as [string, Promise<KeyObject>])
+            .map((user) => [user, this.signature_keys.get(id + user)] as [string, Promise<Buffer | forge.pki.PublicKey>])
             .filter(([user, key]) => {
                 if (!key) {
-                    const promise = new Promise<KeyObject>((resolve, reject) => {
+                    const promise = new Promise<Buffer | forge.pki.PublicKey>((resolve, reject) => {
                         unkown_users.push([user, resolve]);
                     })
                     this.signature_keys.set(id + user, promise);
@@ -206,7 +207,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
                     return keyobj;
                 })
                 // add the keys to the cache and output them in a more usefull format.
-                .map((key: KeyObject, idx: number) => {
+                .map((key, idx: number) => {
                     const [user, resolve] = unkown_users[idx];
                     resolve(key);
                     return {
@@ -217,7 +218,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
             ],
             "user", 
             "key"
-        ) as Record<string, KeyObject>;
+        ) as Record<string, Buffer | forge.pki.PublicKey>;
     }
 
     /**
@@ -225,8 +226,8 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param users the usesrs whos keys should be gotten.
      * @returns the user to key map.
      */
-    private async get_pub_keys(users: string[]) {
-        return (await this.get_key(users, 16));
+    private async get_pub_keys(users: string[]): Promise<Record<string, forge.pki.rsa.PublicKey>> {
+        return (await this.get_key(users, 16)) as Record<string, forge.pki.rsa.PublicKey>;
     }
 
     /**
@@ -234,8 +235,8 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param user the usesr whos keys should be gotten.
      * @returns the user to key map.
      */
-    async get_signature_key(user: string): Promise<KeyObject> {
-        return (await this.get_key([user], 20))[user]
+    async get_signature_key(user: string): Promise<Buffer> {
+        return (await this.get_key([user], 20))[user] as Buffer
     }
 
     /**
@@ -251,7 +252,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
 
         const enc = bufferArrayToBuffer(
             (Object.entries(await key)).map(
-                ([name, key] : [string, KeyObject]) => Buffer.concat(
+                ([name, key] : [string, forge.pki.rsa.PublicKey]) => Buffer.concat(
                     [
                         stringToBuffer(name),
                         encript_rsa(aes_key, key)

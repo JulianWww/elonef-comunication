@@ -1,20 +1,25 @@
 import { nothing } from "../types";
-import NodeRSA, { Format } from "node-rsa";
+import forge from "node-forge";
 
 
-function import_private(key_data: string | nothing, encoding: Format="pkcs1"){
+function import_private(key_data: string | nothing){
     if (!key_data) {
         return undefined
     }
     if (key_data[0] === "-") {
-        const rsa = new NodeRSA({b: 2048})
-        return rsa.importKey(key_data, encoding)
+        return forge.pki.privateKeyFromPem(key_data);
     }
     return Buffer.from(key_data, "base64")
 }
 
 function import_public(key_data: string | nothing) {
-    return import_private(key_data, "pkcs1-public")
+    if (!key_data) {
+        return undefined
+    }
+    if (key_data[0] === "-") {
+        return forge.pki.publicKeyFromPem(key_data);
+    }
+    return Buffer.from(key_data, "base64")
 }
 
 export { import_private, import_public }

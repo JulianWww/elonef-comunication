@@ -4,13 +4,15 @@ function generate_key() {
     return generateKeyPairRSA();
 }
 var {publicKey, privateKey} = generate_key()
+console.log(publicKey)
 
 function test_load_key_rsa(txt) {
+    
     const priv = import_private(privateKey)
     const pub = import_public(publicKey)
 
-    const dec = decript_rsa(encript_rsa(txt, priv), pub)
-    return txt === dec
+    const dec = decript_rsa(encript_rsa(Buffer.from(txt), pub), priv).toString()
+    return false
     
 }
 
