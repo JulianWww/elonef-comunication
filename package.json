@@ -1,6 +1,6 @@
 {
   "name": "elonef-encryption",
-  "version": "1.0.0-dev2",
+  "version": "v1.0.0",
   "license": "MIT",
   "main": "lib/index.js",
   "module": "lib/index.esm.js",
