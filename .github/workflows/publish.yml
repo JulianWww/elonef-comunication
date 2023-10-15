@@ -15,7 +15,9 @@ jobs:
           # Defaults to the user or organization that owns the workflow file
           scope: '@octocat'
       - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/:1}" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          GITHUB_ENV=${GITHUB_ENV:1}
       - name: Test
         run: |
           echo $RELEASE_VERSION
