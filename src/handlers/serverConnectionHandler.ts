@@ -8,6 +8,7 @@ import { stringify, toKeyMapWithValue, to_byte } from "../utility";
 import { nothing } from "../types"
 import { Buffer } from "buffer";
 import { randomBytes } from "../encription/aes";
+import Multimap from "multimap";
 
 
 /**
@@ -37,7 +38,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
     private add_message: (chat_id: string, message: string) => Promise<void | nothing>;
     private get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>;
 
-    private connections: Map<string, WebSocket[]>;
+    private connections: Multimap<string, WebSocket>;
 
     constructor(
             get_pub_key: (id: string) => Promise<PublicClientKey | nothing>,
@@ -56,7 +57,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
         this.add_message = add_message;
         this.get_messages = get_messages;
 
-        this.connections = new Map<string, WebSocket[]>();
+        this.connections = new Multimap<string, WebSocket>();
     }
 
     private async authanticate(ws: WebSocket, con_state: ConnectionState) {
@@ -84,14 +85,26 @@ export class ServerConnectionHandler extends ConnectionHandler {
         ws.send(Buffer.concat([
             uuid(),
             to_byte(16),
-        ]))
+        ]));
+        return user_id
     }
 
     public on_connection = (ws: WebSocket) => {
         console.log("open connection")
         const con_state = new ConnectionState();
         ws.addEventListener("message", this.on_message(ws, con_state));
-        this.authanticate(ws, con_state);
+
+        this.authanticate(ws, con_state)
+        .then(uid => this.add_connection(uid, ws))
+        .then(close => ws.addEventListener("close", close))
+    }
+
+    private add_connection(uid: string, ws: WebSocket) {
+        this.connections.set(uid, ws);
+        
+        return ()  => {
+            this.connections.delete(uid, ws);
+        }
     }
 
     protected async handle_single_side_messages(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean, type: number) {
