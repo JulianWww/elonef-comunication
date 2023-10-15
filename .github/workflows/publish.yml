@@ -14,17 +14,32 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           # Defaults to the user or organization that owns the workflow file
           scope: '@octocat'
+
       - name: Set env
         run: |
           echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
       - name: set pub version
         run: |
-          jq '.name |= "${{ env.RELEASE_VERSION }}"' package.json > _package.json
+          jq '.version |= "${{ env.RELEASE_VERSION }}"' package.json > _package.json
           mv _package.json package.json
+
       - name: Test
         run: |
           cat package.json
-#      - run: yarn
-#      - run: yarn publish // for Yarn version 1, use `yarn publish` instead
-#        env:
-#          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: yarn install
+        run: yarn
+      - name: yarn publish
+        run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: create client
+        run: ./make_client.sh
+
+      - name: yarn publish client
+        run: cd client && yarn publish
+        env: 
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
