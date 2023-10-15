@@ -18,7 +18,7 @@ jobs:
         run: |
           echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Removed v character from version
-        - run: |
+        run: |
           RELEASE_VERSION=${RELEASE_VERSION:1}
       - name: Test
         run: |
