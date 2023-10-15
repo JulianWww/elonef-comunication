@@ -16,6 +16,9 @@
     "pre-pub": "yarn build",
     "doc": "mkdir docs"
   },
+  "files": [
+    "lib/**"
+  ],
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.4",
     "@rollup/plugin-json": "^6.0.1",
