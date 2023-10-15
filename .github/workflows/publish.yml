@@ -21,6 +21,7 @@ jobs:
         run: |
           jq '.name |= $RELEASE_VERSION' package.json > _package.json
           mv _package.json package.json
+      - name: Test
         run: |
           cat package.json
 #      - run: yarn
