@@ -2,18 +2,22 @@ import { WebSocket } from "ws";
 import { BufferReader, bufferToString, stringToBuffer, uuid } from "../encoding";
 import { to_byte } from "../utility";
 import { Buffer } from "buffer";
+import { ForwardedError, RemoteError } from "../erros";
 
 export class ConnectionHandler {
-    request_resolvers: Map<string, (data: Buffer, ws: WebSocket, authenticated: boolean) => void>;
+    request_resolvers: Map<string, (data: Buffer, ws: WebSocket, authenticated: boolean, success: number) => void>;
 
     api_callbacks: Map<string, (data: Buffer, uid: string) => Promise<Buffer>>;
+
+    error_handler: (error: string) => boolean;
 
     static RETURN = 0;
     static API = 1;
     static AUTH = 2;
 
 
-    constructor() {
+    constructor(error_handler: (err: string) => boolean) {
+        this.error_handler = error_handler;
         this.request_resolvers = new Map<string, (data: Buffer) => void>();
         this.api_callbacks = new Map();
     }
@@ -29,7 +33,17 @@ export class ConnectionHandler {
         const promise = new Promise<Buffer>((resolve, reject) => {
             this.request_resolvers.set(
                 uid.toString("base64"), 
-                (data: Buffer, ws: WebSocket, authenticated: boolean) => {
+                (data: Buffer, ws: WebSocket, authenticated: boolean, success: number) => {
+                    if (!success) {
+                        const fail_reason = message.toString();
+
+                        if (!this.error_handler(fail_reason))
+                            reject(new RemoteError(fail_reason))
+                        else {
+                            reject();
+                        }
+                        return;
+                    }
                     if (kill_on_unauth) {
                         if (this.check_auth(ws, authenticated)) {
                             return;
@@ -48,36 +62,53 @@ export class ConnectionHandler {
     protected recv(ws: WebSocket, uuid: Buffer, data: Buffer, authenticated: boolean){
         const uid = uuid.toString("base64");
         const success = data[0];
+        const msg = data.subarray(1);
+
         
-        this.request_resolvers.get(uid)?.(data.subarray(1), ws, authenticated);
-        this.request_resolvers.delete(uid)
+        this.request_resolvers.get(uid)?.(msg, ws, authenticated, success);
+        this.request_resolvers.delete(uid);
     }
 
     protected async handle_message(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean) {
         const uid = message.subarray(0, 16);
         const type = message[16];
         const content = message.subarray(17);
+        try {
 
-        var out = Buffer.from([]);
-        if (type == ConnectionHandler.RETURN) {
-            this.recv(ws, uid, content, authenticated);
-            return;
-        }
-        else if (type == ConnectionHandler.API) {
-            out = await this.handle_api_call(ws, userid, content, authenticated);
-        }
-        else if (type == ConnectionHandler.AUTH) {
-            out = await this.handle_auth(ws, userid, content, authenticated);
-        }
-        else {
-            const returned = await this.handle_single_side_messages(ws, userid, content, authenticated, type);
-            if (!returned) {
+            var out = Buffer.from([]);
+            if (type == ConnectionHandler.RETURN) {
+                this.recv(ws, uid, content, authenticated);
                 return;
             }
-            out = returned
-        }
+            else if (type == ConnectionHandler.API) {
+                out = await this.handle_api_call(ws, userid, content, authenticated);
+            }
+            else if (type == ConnectionHandler.AUTH) {
+                out = await this.handle_auth(ws, userid, content, authenticated);
+            }
+            else {
+                const returned = await this.handle_single_side_messages(ws, userid, content, authenticated, type);
+                if (!returned) {
+                    return;
+                }
+                out = returned
+            }
 
-        ws.send(Buffer.concat([uid, to_byte(ConnectionHandler.RETURN), to_byte(1), out]))
+            ws.send(Buffer.concat([uid, to_byte(ConnectionHandler.RETURN), to_byte(1), out]))
+        }
+        catch (err) {
+            if ((err as Error).name === "ForwardedError") {
+                ws.send(Buffer.concat([
+                    uid, 
+                    to_byte(ConnectionHandler.RETURN), 
+                    to_byte(0), 
+                    Buffer.from((err as Error).message)
+                ]));
+            }
+            else {
+                throw err;
+            }
+        }
     }
 
     protected async handle_single_side_messages(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean, type: number): Promise<Buffer | undefined> {

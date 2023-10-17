@@ -47,8 +47,9 @@ export class ServerConnectionHandler extends ConnectionHandler {
             set_chat_key: (chat_id: string, key_id: string, key: Record<string, string>) => Promise<void>,
             add_message: (chat_id: string, message: string) => Promise<void>,
             get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>,
+            error_handler: (err: string) => boolean = () => true
         ) {
-        super();
+        super(error_handler);
 
         this.get_pub_key = get_pub_key;
         this.get_chat_key = get_chat_key;
@@ -249,7 +250,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
 
     async make_api_request(requiest_id: string | Buffer, targets: string[], data: Buffer) {
         return await Promise.all(targets.map(async target => {
-                const sockets = this.connections.get(target);
+                const sockets = this.connections.get(target) as WebSocket[] | undefined;
                 return sockets ? await Promise.all(sockets.map(async sock => [target, await this._make_api_request(sock, requiest_id, data)] as [string, Buffer])) : []
             })
             .flat()
