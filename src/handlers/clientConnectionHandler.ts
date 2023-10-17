@@ -60,9 +60,10 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * 
      * @param address the address of the server to connect to.
      * @param priv_key the private key used to authenticate the user, sign data and get data points.
+     * @param error_handler a handler for errors. when an error occurs on a coll on the remote end, that is forwarded (aka is a ForwardedError) his function will be called before reject and if it returns true reject will be called without parameters.
      */
-    constructor(sock: WebSocket, priv_key: PrivateClientKey, buffer_getter: (data: any) => Promise<Buffer> = async (v)=> v.data) {
-        super();
+    constructor(sock: WebSocket, priv_key: PrivateClientKey, buffer_getter: (data: any) => Promise<Buffer> = async (v)=> v.data, error_handler: (err: string) => boolean = () => false) {
+        super(error_handler);
 
         this.sign_key = import_private(priv_key.sign_key) as Buffer;
         this.data_key = import_private(priv_key.data_key) as forge.pki.rsa.PrivateKey;

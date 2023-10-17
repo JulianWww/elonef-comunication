@@ -12,4 +12,18 @@ class DataModificationError extends SecutiryError {
     }
 }
 
-export { SecutiryError, DataModificationError }
+class ForwardedError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "ForwardedError"
+    }
+}
+
+class RemoteError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "RemoteError"
+    }
+}
+
+export { SecutiryError, DataModificationError, ForwardedError, RemoteError }

@@ -1,4 +1,4 @@
-const { ServerConnectionHandler, ClientConnectionHandler, generateClientKeys } = require('../lib');
+const { ServerConnectionHandler, ClientConnectionHandler, ForwardedError } = require('../lib');
 
 const client_key = {
   sign_key: 'KMe70BSIf4rSl6xJ85yKs01YLPrL0ipRT+GKwzCORKY=',
@@ -72,7 +72,7 @@ class Pipe {
   }
 
   send(data) {
-    //console.log(this.name, data)
+    //console.log(this.name, data.toString())
     this.other.msg_handler({data})
   }
 
@@ -110,11 +110,15 @@ const wss = new ServerConnectionHandler(
     },
     (chat_id, last_idx, lenght) => messages
   )
-  .add_api_callback("test/hi", (data, uid) => {
-    console.log("hi")
-    wss.make_api_request("client/api/callback", ["d", "other"], Buffer.from("hello"))
-    return Buffer.from("return data");
+  .add_api_callback("test/error", (data, uid) => {
+    throw new ForwardedError("oh no an error occured, Love your error forwarder.")
   });
+
+
+function rejected(result) {
+  console.log("remote error", result);
+}
+  
 
 wss.on_connection(s2c)
 
@@ -122,9 +126,11 @@ client.generate_chat_keys(["denanu", "d"], "test_chat")
 .then(v =>
   client.send_message("hello this is me :)", 0, "test_chat")
 )
-.then(v => 
-  client.make_api_request("test/hi", Buffer.from("hi"))
-)
+.then(async v => {
+  
+    await client.make_api_request("test/error", Buffer.from("hi")).then(()=>1, rejected);
+  
+})
 .then(v=> 
   client.get_message("test_chat", 0, 100)
 )
