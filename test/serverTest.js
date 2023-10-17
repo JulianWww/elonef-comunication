@@ -91,10 +91,18 @@ var messages = [];
 var chat_key_id = ""
 
 
-const client = new ClientConnectionHandler(c2s, client_key)
+const client = new ClientConnectionHandler(
+  c2s, 
+  client_key,
+  (buff) => buff.data,
+  (msg) => {
+    console.error("ERROR:", msg, msg);
+    return false
+  }
+)
 client.add_api_callback("client/api/callback", (data, uid) => {
   console.log(data, uid);
-  return Buffer.from("")
+  return Buffer.from("");
 })
 
 const wss = new ServerConnectionHandler(
@@ -115,20 +123,20 @@ const wss = new ServerConnectionHandler(
   });
 
 
-function rejected(result) {
-  console.log("remote error", result);
-}
-  
 
 wss.on_connection(s2c)
 
 client.generate_chat_keys(["denanu", "d"], "test_chat")
-.then(v =>
-  client.send_message("hello this is me :)", 0, "test_chat")
+.then(async v =>
+  await client.send_message("hello this is me :)", 0, "test_chat")
 )
 .then(async v => {
-  
-    await client.make_api_request("test/error", Buffer.from("hi")).then(()=>1, rejected);
+  try {
+    await client.make_api_request("test/error", Buffer.from("hi"))
+  }
+  catch{
+
+  }
   
 })
 .then(v=> 
