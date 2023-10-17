@@ -92,6 +92,10 @@ var chat_key_id = ""
 
 
 const client = new ClientConnectionHandler(c2s, client_key)
+client.add_api_callback("client/api/callback", (data, uid) => {
+  console.log(data, uid);
+  return Buffer.from("")
+})
 
 const wss = new ServerConnectionHandler(
     id => key,
@@ -107,6 +111,8 @@ const wss = new ServerConnectionHandler(
     (chat_id, last_idx, lenght) => messages
   )
   .add_api_callback("test/hi", (data, uid) => {
+    console.log("hi")
+    wss.make_api_request("client/api/callback", ["d", "other"], Buffer.from("hello"))
     return Buffer.from("return data");
   });
 
@@ -116,7 +122,9 @@ client.generate_chat_keys(["denanu", "d"], "test_chat")
 .then(v =>
   client.send_message("hello this is me :)", 0, "test_chat")
 )
-
+.then(v => 
+  client.make_api_request("test/hi", Buffer.from("hi"))
+)
 .then(v=> 
   client.get_message("test_chat", 0, 100)
 )

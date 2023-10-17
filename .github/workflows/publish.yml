@@ -30,6 +30,10 @@ jobs:
 
       - name: yarn install
         run: yarn
+
+      - name: yarn build
+        run: yarn build
+
       - name: yarn publish
         run: yarn publish
         env:
@@ -39,7 +43,7 @@ jobs:
         run: ./make_client.sh
 
       - name: yarn publish client
-        run: cd client && yarn publish
+        run: cd client && yarn build && yarn publish
         env: 
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

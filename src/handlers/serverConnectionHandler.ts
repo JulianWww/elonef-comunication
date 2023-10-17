@@ -8,6 +8,7 @@ import { stringify, toKeyMapWithValue, to_byte } from "../utility";
 import { nothing } from "../types"
 import { Buffer } from "buffer";
 import { randomBytes } from "../encription/aes";
+import Multimap from "multimap";
 
 
 /**
@@ -37,6 +38,8 @@ export class ServerConnectionHandler extends ConnectionHandler {
     private add_message: (chat_id: string, message: string) => Promise<void | nothing>;
     private get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>;
 
+    private connections: Multimap<string, WebSocket>;
+
     constructor(
             get_pub_key: (id: string) => Promise<PublicClientKey | nothing>,
             get_chat_key: (chat_id: string, key_id: string) => Promise<Record<string, string> | nothing>,
@@ -53,6 +56,8 @@ export class ServerConnectionHandler extends ConnectionHandler {
         this.set_chat_key = set_chat_key;
         this.add_message = add_message;
         this.get_messages = get_messages;
+
+        this.connections = new Multimap<string, WebSocket>();
     }
 
     private async authanticate(ws: WebSocket, con_state: ConnectionState) {
@@ -80,14 +85,26 @@ export class ServerConnectionHandler extends ConnectionHandler {
         ws.send(Buffer.concat([
             uuid(),
             to_byte(16),
-        ]))
+        ]));
+        return user_id
     }
 
     public on_connection = (ws: WebSocket) => {
         console.log("open connection")
         const con_state = new ConnectionState();
         ws.addEventListener("message", this.on_message(ws, con_state));
-        this.authanticate(ws, con_state);
+
+        this.authanticate(ws, con_state)
+        .then(uid => this.add_connection(uid, ws))
+        .then(close => ws.addEventListener("close", close))
+    }
+
+    private add_connection(uid: string, ws: WebSocket) {
+        this.connections.set(uid, ws);
+        
+        return ()  => {
+            this.connections.delete(uid, ws);
+        }
     }
 
     protected async handle_single_side_messages(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean, type: number) {
@@ -228,5 +245,14 @@ export class ServerConnectionHandler extends ConnectionHandler {
         return (message: MessageEvent) => {
             this.handle_message(ws, con_state.uid ? con_state.uid : "", message.data as Buffer, con_state.authenticated);
         }
+    }
+
+    async make_api_request(requiest_id: string | Buffer, targets: string[], data: Buffer) {
+        return await Promise.all(targets.map(async target => {
+                const sockets = this.connections.get(target);
+                return sockets ? await Promise.all(sockets.map(async sock => [target, await this._make_api_request(sock, requiest_id, data)] as [string, Buffer])) : []
+            })
+            .flat()
+        )
     }
 }
