@@ -9,14 +9,14 @@ export class ConnectionHandler {
 
     api_callbacks: Map<string, (data: Buffer, uid: string) => Promise<Buffer>>;
 
-    error_handler: (error: string) => boolean;
+    error_handler: (error: string) => void;
 
     static RETURN = 0;
     static API = 1;
     static AUTH = 2;
 
 
-    constructor(error_handler: (err: string) => boolean) {
+    constructor(error_handler: (err: string) => void) {
         this.error_handler = error_handler;
         this.request_resolvers = new Map<string, (data: Buffer) => void>();
         this.api_callbacks = new Map();
@@ -35,17 +35,17 @@ export class ConnectionHandler {
                 uid.toString("base64"), 
                 (data: Buffer, ws: WebSocket, authenticated: boolean, success: number) => {
                     if (!success) {
-                        const fail_reason = message.toString();
+                        const fail_reason = data.toString();
+                        console.log(fail_reason)
 
-                        if (!this.error_handler(fail_reason))
-                            reject(new RemoteError(fail_reason))
-                        else {
-                            reject();
-                        }
+                        this.error_handler(fail_reason)
+                        reject(new RemoteError(fail_reason))
+                        
                         return;
                     }
                     if (kill_on_unauth) {
                         if (this.check_auth(ws, authenticated)) {
+                            reject("auth failed");
                             return;
                         }
                     }

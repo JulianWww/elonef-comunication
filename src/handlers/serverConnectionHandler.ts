@@ -3,12 +3,13 @@ import { ConnectionHandler } from "./connectionHandler";
 import { WebSocket, MessageEvent } from "ws";
 import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, numberToBuffer, stringToBuffer, uuid, uuid_size } from "../encoding";
 import { import_public } from "../keys";
-import { unsafe_error, verify_nonstreamable } from "../encription/sign";
+import { unsafe_error, verify, verify_nonstreamable } from "../encription/sign";
 import { stringify, toKeyMapWithValue, to_byte } from "../utility";
 import { nothing } from "../types"
 import { Buffer } from "buffer";
 import { randomBytes } from "../encription/aes";
 import Multimap from "multimap";
+import { ForwardedError } from "../erros";
 
 
 /**
@@ -38,6 +39,8 @@ export class ServerConnectionHandler extends ConnectionHandler {
     private add_message: (chat_id: string, message: string) => Promise<void | nothing>;
     private get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>;
 
+    private upload_time_error_tolerance = 60;
+
     private connections: Multimap<string, WebSocket>;
 
     constructor(
@@ -60,6 +63,14 @@ export class ServerConnectionHandler extends ConnectionHandler {
 
         this.connections = new Multimap<string, WebSocket>();
     }
+
+
+    public setUploadTimeErrorTolerance(value: number) {
+        this.upload_time_error_tolerance = value;
+        return this;
+    }
+
+
 
     private async authanticate(ws: WebSocket, con_state: ConnectionState) {
         const data = randomBytes(1024);
@@ -215,12 +226,34 @@ export class ServerConnectionHandler extends ConnectionHandler {
         ])
     }
 
+    private async verify_message_authenticity(message: Buffer, uid: string) {
+        const key = await this.get_pub_key(uid);
+        if (!key) {
+            throw new ForwardedError("uiser " + uid + " does not exist in the servers database.");
+        }
+        const sig_key = import_public(key.sign_key.key) as Buffer;
+        const { safe, data } = await verify(new BufferReader(message), sig_key);
+        if (!safe) {
+            throw new ForwardedError("signature does not match the message sent by " + uid)
+        }
+        const data_reader = new BufferReader(data);
+        const send_time = bufferToNumber(data_reader);
+        if (send_time + this.upload_time_error_tolerance < Date.now()) {
+            throw new ForwardedError("Time is outside tolerated window")
+        }
+    }
+
+
     private async add_message_handler(message: Buffer, uid: string) {
         const reader = new BufferReader(message);
         const chat_id = bufferToString(reader);
+        const client_message = reader.readRest();
+        
+        await this.verify_message_authenticity(client_message, uid);
+
         const msg = Buffer.concat([
             stringToBuffer(uid),                            // the sender id
-            stringToBuffer(reader.readRest()),              // the signed message content
+            stringToBuffer(client_message),                 // the signed message content
             numberToBuffer(Date.now() / 1000),              // the upload time
             to_byte(0)                                      // 0 because why not
         ])
