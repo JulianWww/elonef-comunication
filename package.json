@@ -14,7 +14,7 @@
     "build-storybook": "storybook build",
     "build": "rollup -c",
     "pre-pub": "yarn build",
-    "doc": "mkdir docs"
+    "doc": "typedoc src/index.ts"
   },
   "files": [
     "lib/**"

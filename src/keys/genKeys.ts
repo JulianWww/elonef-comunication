@@ -21,7 +21,7 @@ function generateKeyPairRSA() {
  * build an ECDSA keypair using the sect571r1 curve. These keys will be used to sign and verify the authenticity of messages by the `ConnectionWrapper`
  * @returns a public and a private key.
  */
-async function generateKeyPairECDSA(): Promise<{
+function generateKeyPairECDSA(): Promise<{
   publicKey: string,
   privateKey: string,
 }> {
@@ -36,23 +36,61 @@ async function generateKeyPairECDSA(): Promise<{
   });
 }
 
+/**
+ * a key signed by any number of CAs. This is used for RSA and ECDSA by the PublicClientKey
+ */
 interface SignedKey {
+  /**
+   * The data containing the actual Key
+   */
   key: string,
-  dec_key: string,
+  /**
+   * the signatures of this key. (currently unused)
+   */
   signatures: Record<string, string>
 }
 
+/**
+ * A clients public key. Used to authenticate that client, sign messages and communicate the chat keys. (the aes keys used to encript messages in a certain chat)
+ */
 interface PublicClientKey {
+  /**
+   * the Clients Public RSA key
+   */
   data_key: SignedKey,
+  /**
+   * the clients Public ECDSA key
+   */
   sign_key: SignedKey,
+  /**
+   * the user id of the client
+   */
   id: string
 }
 
+/**
+ * A clients private key used to create a connection to the server and handle the client side 
+ */
 interface PrivateClientKey {
+  /**
+   * the private ECDSA key
+   */
   sign_key: string,
+  /**
+   * the privat RSA Key
+   */
   data_key: string,
+  /**
+   * the ECDSA key of the server (currently unused)
+   */
   server_key: string,
+  /**
+   * the public keys of the CA's (currntly unused)
+   */
   ca_keys: Record<string, string>,
+  /**
+   * the user id of the user.
+   */
   uid: string,
 }
 
@@ -88,5 +126,5 @@ async function generateClientKeys(server_key: string, ca_keys: any[], id: string
   }
 }
 
-export { generateKeyPairECDSA, generateKeyPairRSA, format, curve, generateClientKeys }
+export { generateClientKeys }
 export type { PublicClientKey, PrivateClientKey, SignedKey }
