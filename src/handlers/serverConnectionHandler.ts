@@ -238,7 +238,9 @@ export class ServerConnectionHandler extends ConnectionHandler {
         }
         const data_reader = new BufferReader(data);
         const send_time = bufferToNumber(data_reader);
-        if (send_time + this.upload_time_error_tolerance < Date.now()) {
+        
+        const current = Date.now() / 1000;
+        if (send_time + this.upload_time_error_tolerance > Date.now() && send_time <= current) {
             throw new ForwardedError("Time is outside tolerated window")
         }
     }

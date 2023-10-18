@@ -372,71 +372,78 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @returns list of messages with user that sent them. the source is verified.
      */
     async get_message(chat_id: string, back_idx: number, length: number) {
-        const messages = await Promise.all(
-                bufferToBufferArray(
-                new BufferReader(
-                    await this.send(
-                        this.sock,
-                        Buffer.concat([
-                            stringToBuffer(chat_id),
-                            numberToBuffer(back_idx),
-                            numberToBuffer(length)
-                        ]),
-                        21
-                    )
-                )
+        const messages = await 
+            this.send(
+                this.sock,
+                Buffer.concat([
+                    stringToBuffer(chat_id),
+                    numberToBuffer(back_idx),
+                    numberToBuffer(length)
+                ]),
+                21
             )
-            .map(
-                (buf: Buffer) => new BufferReader(buf)
-            )
-            .map((reader: BufferReader) => {
-                return {
-                    sender_id: bufferToString(reader),
-                    signed_block: extractDynamicBuffer(reader),
-                    upload_time: bufferToNumber(reader),
-                    reactions: reader.readRest()
-                }
-            })
-            .map(async (data) => {
-                const key = await this.get_signature_key(data.sender_id)
-
-                const verified = new BufferReader(
-                    await verifyAndRaiseError(
-                        new BufferReader(
-                            data.signed_block
-                        ),
-                        key
-                    )
-                );
-                return {
-                    ...data,
-                    sent_time: bufferToNumber(verified),
-                    msg_type: verified.read(1)[0],
-                    aes_key_id: verified.read(uuid_size),
-                    data: verified.readRest(),
-                }
-            })
-            .map(async (data_promise) => {
-                const data = await data_promise;
-                const key = await this.get_chat_key(chat_id, data.aes_key_id);
-
-                return {
-                    ...data,
-                    data: decript_aes(data.data, key)
-                }
-            })
-            .map(async (data_promise) => {
-                const data = await data_promise;
-                return {
-                    sender_id: data.sender_id,
-                    reactions: data.reactions,
-                    upload_time: data.upload_time,
-                    sent_time: data.sent_time,
-                    msg_type: data.msg_type,
-                    data: data.data,
-                } as Message;
-            })
-        )
+            .then(buff => new BufferReader(buff))
+            .then(bufferToBufferArray)
+            .then(buffs => this.decode_messages(chat_id, buffs))
         return messages;
+    }
+
+    /**
+     * decodes the messages
+     * @param chat_id the chat id the messages belong to. its used to get the message decription key.
+     * @param messages the messages to decode
+     */
+    public decode_messages(chat_id: string, messages: Buffer[]) {
+        return Promise.all(messages
+        .map(
+            (buf: Buffer) => new BufferReader(buf)
+        )
+        .map((reader: BufferReader) => {
+            return {
+                sender_id: bufferToString(reader),
+                signed_block: extractDynamicBuffer(reader),
+                upload_time: bufferToNumber(reader),
+                reactions: reader.readRest()
+            }
+        })
+        .map(async (data) => {
+            const key = await this.get_signature_key(data.sender_id)
+
+            const verified = new BufferReader(
+                await verifyAndRaiseError(
+                    new BufferReader(
+                        data.signed_block
+                    ),
+                    key
+                )
+            );
+            return {
+                ...data,
+                sent_time: bufferToNumber(verified),
+                msg_type: verified.read(1)[0],
+                aes_key_id: verified.read(uuid_size),
+                data: verified.readRest(),
+            }
+        })
+        .map(async (data_promise) => {
+            const data = await data_promise;
+            const key = await this.get_chat_key(chat_id, data.aes_key_id);
+
+            return {
+                ...data,
+                data: decript_aes(data.data, key)
+            }
+        })
+        .map(async (data_promise) => {
+            const data = await data_promise;
+            return {
+                sender_id: data.sender_id,
+                reactions: data.reactions,
+                upload_time: data.upload_time,
+                sent_time: data.sent_time,
+                msg_type: data.msg_type,
+                data: data.data,
+            } as Message;
+        }))
     }
 }
