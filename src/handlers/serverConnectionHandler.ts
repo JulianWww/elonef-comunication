@@ -2,7 +2,7 @@ import { PublicClientKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
 import { WebSocket, MessageEvent } from "ws";
 import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, numberToBuffer, stringToBuffer, uuid, uuid_size } from "../encoding";
-import { import_public } from "../keys";
+import { import_public } from "../keys/load_keys";
 import { unsafe_error, verify, verify_nonstreamable } from "../encription/sign";
 import { stringify, toKeyMapWithValue, to_byte } from "../utility";
 import { nothing } from "../types"
@@ -40,6 +40,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
     private get_messages: (chat_id: string, last_idx: number, length: number) => Promise<string[] | nothing>;
 
     private upload_time_error_tolerance = 60;
+    private time_delay_tolerance = 10;
 
     private connections: Multimap<string, WebSocket>;
 
@@ -67,6 +68,11 @@ export class ServerConnectionHandler extends ConnectionHandler {
 
     public setUploadTimeErrorTolerance(value: number) {
         this.upload_time_error_tolerance = value;
+        return this;
+    }
+
+    public setTimeUploadErrorTolerance(value: number) {
+        this.time_delay_tolerance = value;
         return this;
     }
 
@@ -211,12 +217,10 @@ export class ServerConnectionHandler extends ConnectionHandler {
         const key_id = await this.get_chat_newest_chat_key(chat_id);
 
         if (!key_id) {
-            //console.log("failed to get chat key id for chat " + chat_id);
             return Buffer.from("");
         }
         const key = (await this.get_chat_key(chat_id, key_id));
         if (!key) {
-            //console.log("failed to get chat key for chat " + chat_id);
             return Buffer.from("");
         }
 
@@ -240,7 +244,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
         const send_time = bufferToNumber(data_reader);
         
         const current = Date.now() / 1000;
-        if (send_time + this.upload_time_error_tolerance > Date.now() && send_time <= current) {
+        if (send_time + this.upload_time_error_tolerance < current || send_time - this.time_delay_tolerance > current) {
             throw new ForwardedError("Time is outside tolerated window")
         }
     }

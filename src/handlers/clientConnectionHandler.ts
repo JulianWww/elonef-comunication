@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { PrivateClientKey, SignedKey } from "../keys/genKeys";
 import { ConnectionHandler } from "./connectionHandler";
 import { WebSocket, MessageEvent } from "ws";
-import { import_private, import_public } from "../keys";
+import { import_private, import_public } from "../keys/load_keys";
 import { sign, sign_nonstreamable, verifyAndRaiseError } from "../encription/sign";
 import { BufferReader, bufferArrayToBuffer, bufferToBufferArray, bufferToNumber, bufferToString, bufferToStringArray, extractDynamicBuffer, numberToBuffer, shortNumberToBuffer, stringToBuffer, uuid_size } from "../encoding";
 import { decript_aes, decript_rsa, encript_aes, encript_rsa } from "../encription";

@@ -5,6 +5,11 @@ import forge from "node-forge";
 
 const iv_size = 16
 
+/**
+ * creates a random buffer of size size
+ * @param size the size of the buffer
+ * @returns random bytes
+ */
 function randomBytes(size: number) {
     return _randomBytes(size)
 }
@@ -50,8 +55,4 @@ function decript_aes(input: Buffer, key: Buffer) {
     return Buffer.from(cypher.output.bytes())
 }
 
-function create_aes_key() {
-    return randomBytes(32)
-}
-
-export { encript_aes, decript_aes, create_aes_key, randomKey, randomBytes }
+export { encript_aes, decript_aes, randomKey, randomBytes }

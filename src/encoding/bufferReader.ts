@@ -2,7 +2,7 @@ import assert from "assert";
 import { Buffer } from "buffer";
 
 /**
- * A handler that will permit us to read a Buffer n bytes at a time. This is used by the decoding system to make it simpler to understand
+ * A handler that will permit us to read a Buffer n bytes at a time. This is used by the decoding system to make it simpler to understand. It allows us to read a buffer from the beginning to the end using single bytes at a time or subarrays. Its also the input to all the decode functions.
  * @type Class
  */
 class BufferReader {
