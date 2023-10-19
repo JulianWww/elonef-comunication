@@ -1,0 +1,3 @@
+[submodule "cpp/lib/include/websocket"]
+	path = cpp/lib/include/websocket
+	url = https://github.com/zaphoyd/websocketpp
