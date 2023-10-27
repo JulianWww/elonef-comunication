@@ -1,7 +1,18 @@
 #include <iostream>
+#include "test_utils/test.hpp"
+#include "run_test.hpp"
+
+
 
 int main(){
-    std::cout << "Hello, from elonef-communication!\n";
+    srand(time(0));
 
-    return 0;
+    
+    test_aes();
+    test_ecdsa();
+    test_encoding();
+    test_rsa();
+
+
+    return summarize_tests();
 }
