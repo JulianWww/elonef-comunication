@@ -13,7 +13,7 @@ function numberToBuffer(num: number) {
     }
     return Buffer.from([
         out.length,
-        ...out.reverse()
+        ...out
     ])
 }
 
@@ -41,7 +41,7 @@ function bufferToNumber(stream: BufferReader) {
     const len = stream.read(1)[0];
     var value = 0;
     for (var idx=0; idx < len; idx++) {
-        value = (value << 8) + stream.read(1)[0];
+        value = value + (stream.read(1)[0] << (8 * idx));
     }
     return value;
 }
@@ -112,7 +112,7 @@ export function bufferToStringArray(reader: BufferReader) {
  * @param msg {Buffer} - the message encripted with AES
  * @param decriptionData {Record<string, Buffer>} - The decription keys encripted with an asymetric encription
  */
-function messageToBuffer(msg: Buffer, decriptionData: Record<string, Buffer>) {
+/*function messageToBuffer(msg: Buffer, decriptionData: Record<string, Buffer>) {
     const out = Array();
 
     // add the buffer
@@ -129,13 +129,13 @@ function messageToBuffer(msg: Buffer, decriptionData: Record<string, Buffer>) {
     )
     return Buffer.concat(out)
 }
-
+*/
 /**
  * converts a buffer to a Message with decription information
  * @param buff {Buffer} - the buffer containing all the information
  * @param keySize {number} - the size of the decription key
  */
-function bufferToMessage(buff: Buffer, keySize: number) {
+/*function bufferToMessage(buff: Buffer, keySize: number) {
     const stream = new BufferReader(buff);
     const msg = extractDynamicBuffer(stream);
     
@@ -147,11 +147,11 @@ function bufferToMessage(buff: Buffer, keySize: number) {
         )
     }
     return [msg, decypherData] as [Buffer, Map<string, Buffer>]
-}
+}*/
 
 export { 
-    messageToBuffer, 
-    bufferToMessage, 
+    //messageToBuffer, 
+    //bufferToMessage, 
     uuid, 
     uuid_size, 
     numberToBuffer, 

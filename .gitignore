@@ -135,3 +135,10 @@ dist
 .pnp.*
 lib/
 docs/
+
+# cpp
+# dependancies 
+cpp/uuid_v4/
+cpp/cryptopp-cmake/
+cpp/cryptopp-pem-cmake/
+cpp/build/
