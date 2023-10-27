@@ -42,6 +42,18 @@ std::string Elonef::toString(CryptoPP::ByteQueue& bytes) {
     return out;
 }
 
+CryptoPP::SecByteBlock Elonef::toSecBlock(CryptoPP::ByteQueue& bytes) {
+    CryptoPP::SecByteBlock out(bytes.CurrentSize());
+
+    CryptoPP::ArraySink enc(
+        out.data(), bytes.CurrentSize()
+    );
+    bytes.TransferAllTo2(enc);
+    enc.MessageEnd();
+
+    return out;
+}
+
 CryptoPP::ByteQueue Elonef::toQueue(std::string str) { 
     CryptoPP::ByteQueue plain;
     plain.Put(reinterpret_cast<const CryptoPP::byte*>(&str[0]), str.size());

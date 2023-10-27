@@ -29,7 +29,7 @@ std::string Elonef::toDynamicSizeString(CryptoPP::ByteQueue& que, size_t(*toNum)
 
 CryptoPP::ByteQueue Elonef::extractDynamicLengthQueue(CryptoPP::ByteQueue& que, size_t(*toNum)(CryptoPP::ByteQueue&)) {
     size_t size = toNum(que);
-    CryptoPP::ByteQueue out;
+    CryptoPP::ByteQueue out(size);
     que.TransferTo(out, size);
     return out;
 }

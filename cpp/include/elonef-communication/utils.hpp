@@ -10,6 +10,7 @@ namespace Elonef {
     std::string toHex(CryptoPP::ByteQueue& bytes);
     CryptoPP::ByteQueue fromHex(std::string str);
     std::string toString(CryptoPP::ByteQueue& bytes);
+    CryptoPP::SecByteBlock toSecBlock(CryptoPP::ByteQueue& bytes);
 
     CryptoPP::ByteQueue toQueue(std::string str);
 }

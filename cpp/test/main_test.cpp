@@ -11,6 +11,7 @@ int main(){
     test_aes();
     test_ecdsa();
     test_encoding();
+    test_error();
     test_rsa();
 
 
