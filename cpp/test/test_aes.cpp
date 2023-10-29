@@ -1,7 +1,7 @@
 #include <elonef-communication/encryption/aes.hpp>
 #include <elonef-communication/utils.hpp>
-#include <crypto++/hex.h>
-#include <crypto++/files.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/files.h>
 #include "test_utils/test.hpp"
 #include "run_test.hpp"
 

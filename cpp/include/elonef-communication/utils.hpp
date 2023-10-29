@@ -1,6 +1,6 @@
 #pragma once
 
-#include <crypto++/hex.h>
+#include <cryptopp/hex.h>
 #include <cryptopp/osrng.h>
 
 namespace Elonef {

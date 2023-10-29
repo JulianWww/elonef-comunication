@@ -1,6 +1,6 @@
 #pragma once
 
-#include <crypto++/queue.h>
+#include <cryptopp/queue.h>
 
 namespace Elonef {
     CryptoPP::ByteQueue encrypt(CryptoPP::ByteQueue to_encrypt, CryptoPP::SecByteBlock key);

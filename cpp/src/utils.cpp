@@ -1,9 +1,9 @@
 #include <elonef-communication/utils.hpp>
-#include <crypto++/cryptlib.h>
-#include <crypto++/rijndael.h>
-#include <crypto++/modes.h>
-#include <crypto++/files.h>
-#include <crypto++/osrng.h>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/rijndael.h>
+#include <cryptopp/modes.h>
+#include <cryptopp/files.h>
+#include <cryptopp/osrng.h>
 
 CryptoPP::AutoSeededRandomPool Elonef::rng;
 
