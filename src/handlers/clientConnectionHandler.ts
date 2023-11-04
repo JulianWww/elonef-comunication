@@ -149,11 +149,15 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param message the data to be sent to the server.
      * @param type the type of the request. see the request type table in the super.send documentation for more info.
      * @param kill_on_unauth weather to kill unothorized requests automatically. false for the client.
+     * @param hold wait for the connection to be authenticated before sending.
      * @returns the data returned by the server.
      */
-    protected async send(ws: WebSocket, message: string | Buffer, type: number, kill_on_unauth?: boolean): Promise<Buffer> {
-        await this.wait_for_connection();
-        return await super.send(ws, message, type, kill_on_unauth);
+    protected async send(ws: WebSocket, message: string | Buffer, type: number, kill_on_unauth?: boolean, hold:boolean=true): Promise<Buffer> {
+        if (hold) {
+            console.log("holding")
+            await this.wait_for_connection();
+        }
+        return await super.send(ws, message, type, kill_on_unauth, hold);
     }
 
     /**
@@ -168,11 +172,11 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * Make a request to the servers api. The name of the api must be in the servers api callback table. Read the section on api in the server doc for more info.
      * @param request_id the name of the api bind point to call
      * @param data the data that should be sent to the api bind point.
+     * @param waitForAuth wait for the server
      * @returns the data returned form the api call.
      */
-    async make_api_request(request_id: Buffer | string, data: Buffer | string) {
-        console.log("kasjgkhasklghkjashgh")
-        return this._make_api_request(this.sock, request_id, data);
+    async make_api_request(request_id: Buffer | string, data: Buffer | string, waitForAuth:boolean=true) {
+        return super._make_api_request(this.sock, request_id, data, waitForAuth);
     }
 
     /**

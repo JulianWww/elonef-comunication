@@ -30,7 +30,7 @@ export class ConnectionHandler {
         return this;
     }
 
-    protected send(ws: WebSocket, message: Buffer | string, type: number, kill_on_unauth: boolean = true): Promise<Buffer> {
+    protected send(ws: WebSocket, message: Buffer | string, type: number, kill_on_unauth: boolean = true, hold:boolean=true): Promise<Buffer> {
         const uid = uuid();
         
         const promise = new Promise<Buffer>((resolve, reject) => {
@@ -139,13 +139,13 @@ export class ConnectionHandler {
         return handler.callback(data, uid);
     }
 
-    async _make_api_request(ws: WebSocket, request_id: Buffer | string, data: Buffer | string) {
+    async _make_api_request(ws: WebSocket, request_id: Buffer | string, data: Buffer | string, waitForAuth:boolean=true) {
         //await this.ready;
         console.log("sent");
         return this.send(ws, Buffer.concat([
             stringToBuffer(request_id),
             Buffer.from(data),
-        ]), ConnectionHandler.API);
+        ]), ConnectionHandler.API, true, waitForAuth);
     }
 
     protected check_auth(ws: WebSocket, authenticated: boolean) {

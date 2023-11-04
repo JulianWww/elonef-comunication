@@ -117,33 +117,15 @@ const wss = new handlers.ServerConnectionHandler(
     },
     (chat_id, last_idx, lenght) => messages
   )
-  .add_api_callback("test/error", (data, uid) => {
-    throw new errors.ForwardedError("oh no an error occured, Love your error forwarder.")
-  });
+  .add_api_callback("test", (data, uid) => {
+    console.log(data.toString());
+    return Buffer.from("oh no an error occured, Love your error forwarder.")
+  }, false);
 
 
 
 wss.on_connection(s2c)
-client.authenticate(client_key)
+//client.authenticate(client_key)
 
-client.generate_chat_keys(["denanu", "d"], "test_chat")
-.then(async v =>
-  await client.send_message("hello this is me :)", 0, "test_chat")
-)
-.catch(e => console.log(e))
-.then(async v => {
-  try {
-    await client.make_api_request("test/error", Buffer.from("hi"))
-  }
-  catch{
-
-  }
-  
-})
-.then(v=> 
-  client.get_message("test_chat", 0, 100)
-)
-.then(v=> {
-  console.log("key_after gen")
-  console.log(v.map(msg => {return {...msg, data: msg.data.toString()}}))
-})
+client.make_api_request("test", Buffer.from("some client data"), false)
+.then(data => console.log(data.toString()))
