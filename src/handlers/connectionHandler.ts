@@ -7,7 +7,10 @@ import { ForwardedError, RemoteError } from "../erros";
 export class ConnectionHandler {
     request_resolvers: Map<string, (data: Buffer, ws: WebSocket, authenticated: boolean, success: number) => void>;
 
-    api_callbacks: Map<string, (data: Buffer, uid: string) => Promise<Buffer>>;
+    api_callbacks: Map<string, {
+        callback: (data: Buffer, uid: string) => Promise<Buffer>,
+        auth_needed: boolean
+    }>;
 
     error_handler: (error: string) => void;
 
@@ -22,8 +25,8 @@ export class ConnectionHandler {
         this.api_callbacks = new Map();
     }
 
-    add_api_callback(name: string, callback: (data: Buffer, uid: string) => Promise<Buffer>) {
-        this.api_callbacks.set(name, callback);
+    add_api_callback(name: string, callback: (data: Buffer, uid: string) => Promise<Buffer>, auth_needed: boolean=true) {
+        this.api_callbacks.set(name, {callback, auth_needed: auth_needed});
         return this;
     }
 
@@ -120,7 +123,6 @@ export class ConnectionHandler {
     }
 
     protected handle_api_call(ws: WebSocket, uid: string, message: Buffer, authenticated: boolean) {
-        this.check_auth(ws, authenticated);
         const reader = new BufferReader(message);
         const call_id = bufferToString(reader);
         const data = reader.readRest();
@@ -129,7 +131,10 @@ export class ConnectionHandler {
         if (!handler) {
             throw new Error("Unknown api call: " + call_id);
         }
-        return handler(data, uid);
+        if (handler.auth_needed) {
+            this.check_auth(ws, authenticated);
+        }
+        return handler.callback(data, uid);
     }
 
     async _make_api_request(ws: WebSocket, request_id: Buffer | string, data: Buffer | string) {

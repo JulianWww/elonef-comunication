@@ -26,15 +26,15 @@ export class ClientConnectionHandler extends ConnectionHandler {
     /**
      * the private key used to authenticate the user and sign data.
      */
-    private sign_key: Buffer;
+    private sign_key?: Buffer;
     /**
      * the public key used to encrypt data.
      */
-    private data_key: forge.pki.rsa.PrivateKey;
+    private data_key?: forge.pki.rsa.PrivateKey;
     /**
      * the UUID of the user (not a name but an id).
      */
-    private uid: string;
+    private uid?: string;
 
     /**
      * a promise that is resolved when the user is authenticated.
@@ -54,6 +54,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
      */
     private aes_keys: Map<string, Promise<Buffer>>;
     private buffer_getter: (data: any) => Promise<Buffer>
+    private sign_for_auth: (b: Buffer) => void;
 
 
     /**
@@ -62,12 +63,8 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param priv_key the private key used to authenticate the user, sign data and get data points.
      * @param error_handler a handler for errors. when an error occurs on a coll on the remote end, that is forwarded (aka is a ForwardedError) his function will be called before reject and if it returns true reject will be called without parameters.
      */
-    constructor(sock: WebSocket, priv_key: PrivateClientKey, buffer_getter: (data: any) => Promise<Buffer> = async (v)=> v.data, error_handler: (err: string) => boolean = () => false) {
+    constructor(sock: WebSocket, buffer_getter: (data: any) => Promise<Buffer> = async (v)=> v.data, error_handler: (err: string) => boolean = () => false) {
         super(error_handler);
-
-        this.sign_key = import_private(priv_key.sign_key) as Buffer;
-        this.data_key = import_private(priv_key.data_key) as forge.pki.rsa.PrivateKey;
-        this.uid = priv_key.uid;
         
         this.sock = sock
         this.sock.addEventListener("message", this.get_data_from_server);
@@ -77,9 +74,18 @@ export class ClientConnectionHandler extends ConnectionHandler {
             this.make_ready = resolve;
         });
 
+        this.sign_for_auth = (b: Buffer) => 1;
+
         this.signature_keys = new Map();
         this.aes_keys = new Map();
         this.buffer_getter = buffer_getter
+    }
+
+    authenticate(priv_key: PrivateClientKey) {
+        this.sign_key = import_private(priv_key.sign_key) as Buffer;
+        this.data_key = import_private(priv_key.data_key) as forge.pki.rsa.PrivateKey;
+        this.uid = priv_key.uid;
+        this.sign_for_auth(this.sign_key);
     }
 
     /**
@@ -91,10 +97,25 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @returns the signature
      */
     protected async handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean): Promise<Buffer> {
+        const sig_key = new Promise<Buffer>((resolve) => {
+            this.sign_for_auth = resolve;
+
+            if (this.sign_key) {
+                resolve(this.sign_key);
+            }
+        })
+        const signature = await sig_key.then(key => sign_nonstreamable(message, key))
+
+        if (!this.uid) {
+            return Buffer.from("");
+        }
+
         const out = Buffer.concat([
             stringToBuffer(this.uid),
-            await sign_nonstreamable(message, this.sign_key)
+            signature
         ]);
+
+
         return out;
     }
 
@@ -288,6 +309,10 @@ export class ClientConnectionHandler extends ConnectionHandler {
         if (!reader.canRead()) {
             throw new Error("no chat key provided by the server");
         }
+
+        if (!this.data_key) {
+            return undefined;
+        }
         
         return {
             uuid: reader.read(uuid_size),
@@ -308,7 +333,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
             return await key;
         }
 
-        key = new Promise((resolve) => 
+        key = new Promise((resolve, reject) => 
             this.send(
                 this.sock,
                 Buffer.concat([
@@ -323,8 +348,12 @@ export class ClientConnectionHandler extends ConnectionHandler {
                 }
                 return buf;
             })
-            .then((buf: Buffer) => decript_rsa(buf, this.data_key))
-            .then((buf: Buffer) => resolve(buf))
+            .then((buf: Buffer) => {
+                if (!this.data_key) {
+                    return reject();
+                }
+                resolve(decript_rsa(buf, this.data_key))
+            })
         );
 
         this.aes_keys.set(id, key);
@@ -337,7 +366,11 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @param chat_id 
      */
     async send_message(message: Buffer, message_type: byte, chat_id: string) {
-        const { uuid, key } = await this.get_newest_chat_key(chat_id);
+        const newest_key = await this.get_newest_chat_key(chat_id);
+        if (!newest_key || !this.sign_key) {
+            throw Error("can not send messages unless authenticated")
+        }
+        const { uuid, key } = newest_key;
         const enc = await sign(
             Buffer.concat([
                 numberToBuffer(Date.now() / 1000),  // time sent

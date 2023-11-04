@@ -1,4 +1,4 @@
-const { ServerConnectionHandler, ClientConnectionHandler, ForwardedError } = require('../lib');
+const { handlers, errors } = require('../lib');
 
 const client_key = {
   sign_key: 'KMe70BSIf4rSl6xJ85yKs01YLPrL0ipRT+GKwzCORKY=',
@@ -91,9 +91,8 @@ var messages = [];
 var chat_key_id = ""
 
 
-const client = new ClientConnectionHandler(
+const client = new handlers.ClientConnectionHandler(
   c2s, 
-  client_key,
   (buff) => buff.data,
   (msg) => {
     console.error("ERROR:", msg, msg);
@@ -105,7 +104,7 @@ client.add_api_callback("client/api/callback", (data, uid) => {
   return Buffer.from("");
 })
 
-const wss = new ServerConnectionHandler(
+const wss = new handlers.ServerConnectionHandler(
     id => key,
     (chat_id, key_id) => chat_key.get(key_id),
     (chat_id) => chat_key_id,
@@ -119,17 +118,19 @@ const wss = new ServerConnectionHandler(
     (chat_id, last_idx, lenght) => messages
   )
   .add_api_callback("test/error", (data, uid) => {
-    throw new ForwardedError("oh no an error occured, Love your error forwarder.")
+    throw new errors.ForwardedError("oh no an error occured, Love your error forwarder.")
   });
 
 
 
 wss.on_connection(s2c)
+client.authenticate(client_key)
 
 client.generate_chat_keys(["denanu", "d"], "test_chat")
 .then(async v =>
   await client.send_message("hello this is me :)", 0, "test_chat")
 )
+.catch(e => console.log(e))
 .then(async v => {
   try {
     await client.make_api_request("test/error", Buffer.from("hi"))
