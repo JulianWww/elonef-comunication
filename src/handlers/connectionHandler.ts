@@ -76,6 +76,8 @@ export class ConnectionHandler {
         const uid = message.subarray(0, 16);
         const type = message[16];
         const content = message.subarray(17);
+
+        console.log("got message", type, uid)
         try {
 
             var out = Buffer.from([]);
