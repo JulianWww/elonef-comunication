@@ -5,3 +5,7 @@ cp * client
 
 echo "export class ServerConnectionHandler {}" > client/src/handlers/serverConnectionHandler.ts
 jq '.name |= "\(.)-client"' package.json > client/package.json
+
+cd client
+./make_package.sh
+cd ..
