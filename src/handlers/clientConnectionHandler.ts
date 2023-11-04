@@ -39,7 +39,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
     /**
      * a promise that is resolved when the user is authenticated.
      */
-    private ready: Promise<void>;
+    public ready: Promise<void>;
     /**
      * the resolver to the ready promise.
      */
