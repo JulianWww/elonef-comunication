@@ -171,6 +171,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @returns the data returned form the api call.
      */
     async make_api_request(request_id: Buffer | string, data: Buffer | string) {
+        console.log("kasjgkhasklghkjashgh")
         return this._make_api_request(this.sock, request_id, data);
     }
 
