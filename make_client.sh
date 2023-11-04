@@ -7,5 +7,6 @@ echo "export class ServerConnectionHandler {}" > client/src/handlers/serverConne
 jq '.name |= "\(.)-client"' package.json > client/package.json
 
 cd client
+yarn build
 ./make_package.sh
 cd ..
