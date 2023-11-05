@@ -46,6 +46,15 @@ export class ClientConnectionHandler extends ConnectionHandler {
     private make_ready: VoidFunction;
 
     /**
+     * wait for the connection to be established
+     */
+    private connectionWaiter: Promise<void>;
+    /**
+     * resolve for the make connection waiter
+     */
+    private makeConnectionReady: ()=>void;
+
+    /**
      * the cache of public keys used for optimization by avoiding asking the server for the public key for every message. This map is used by the get_keys method and keys are automatically added to the cache. All keys in the cache are verified, assuming we had verification witch is still WIP
      */
     private signature_keys: Map<string, Promise<Buffer | forge.pki.PublicKey>>;
@@ -74,6 +83,11 @@ export class ClientConnectionHandler extends ConnectionHandler {
             this.make_ready = resolve;
         });
 
+        this.makeConnectionReady = () => 1;
+        this.connectionWaiter = new Promise<void>((resolve, _)=> {
+            this.makeConnectionReady = resolve;
+        });
+
         this.sign_for_auth = (b: Buffer) => 1;
 
         this.signature_keys = new Map();
@@ -97,6 +111,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
      * @returns the signature
      */
     protected async handle_auth(ws: WebSocket, userid: string, message: Buffer, authenticated: boolean): Promise<Buffer> {
+        this.makeConnectionReady();
         const sig_key = new Promise<Buffer>((resolve) => {
             this.sign_for_auth = resolve;
 
@@ -157,6 +172,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
             console.log("holding")
             await this.wait_for_connection();
         }
+        await this.connectionWaiter;
         return await super.send(ws, message, type, kill_on_unauth, hold);
     }
 

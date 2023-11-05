@@ -56,7 +56,6 @@ export class ConnectionHandler {
                 }
             );
         });
-        while (ws.readyState == WebSocket.CONNECTING) {}
         ws.send(Buffer.concat([uid, Buffer.from([type]), Buffer.from(message)]));
 
         return promise;
