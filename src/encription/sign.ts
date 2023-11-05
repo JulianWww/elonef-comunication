@@ -2,11 +2,11 @@ import BufferReader from "../encoding/bufferReader";
 import { DataModificationError } from "../erros";
 import { sign as _sign, verify as _verify } from "eccrypto";
 import { bufferToShortNumber, extractDynamicBuffer, shortNumberToBuffer, stringToBuffer } from "../encoding";
-import createHash from "create-hash"
+import createHash from "create-hash";
 import { Buffer } from "buffer";
 
 
-async function sha512(data: Buffer) {
+async function hashData(data: Buffer) {
     var hash = createHash('sha256')
     hash.update(data) // optional encoding parameter
     return hash.digest()
@@ -19,7 +19,7 @@ async function sha512(data: Buffer) {
  * @returns the signature of the data without metadata
  */
 async function sign_nonstreamable(data: Buffer, key: Buffer) {
-    const hash = await sha512(data)
+    const hash = await hashData(data)
     return _sign(key, hash)
 }
 
@@ -44,7 +44,7 @@ async function sign(data: Buffer, key: Buffer) {
  * @returns true if the data is safe
  */
 async function verify_nonstreamable(data: Buffer, sig: Buffer, key: Buffer) {
-    const hash = await sha512(data);
+    const hash = await hashData(data);
     return _verify(key, hash, sig).then(() => true).catch(() => false);
 }
 
