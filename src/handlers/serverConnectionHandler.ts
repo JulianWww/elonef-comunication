@@ -79,6 +79,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
 
 
     private async authanticate(ws: WebSocket, con_state: ConnectionState) {
+        console.log("authenticated");
         const data = randomBytes(1024);
         
         const reader = new BufferReader(
