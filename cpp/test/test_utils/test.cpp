@@ -32,6 +32,5 @@ int summarize_tests() {
     printf("ran %i test\n", run_tests);
     printf("%i Successes\n", successful_tests),
     printf("%i fails\n", run_tests - successful_tests);
-
     return run_tests - successful_tests;
 }

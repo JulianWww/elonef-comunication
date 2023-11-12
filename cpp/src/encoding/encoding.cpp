@@ -32,3 +32,7 @@ CryptoPP::ByteQueue Elonef::toBytes(CryptoPP::ByteQueue queue, CryptoPP::ByteQue
     queue.TransferAllTo(out);
     return out;    
 }
+
+CryptoPP::ByteQueue Elonef::vectorToBytes(const std::vector<std::string>& keys) {
+    return toBytes(keys.begin(), keys.end());
+}

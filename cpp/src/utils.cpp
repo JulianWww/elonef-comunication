@@ -29,7 +29,7 @@ CryptoPP::ByteQueue Elonef::fromHex(std::string str) {
     return bytes;
 }
 
-std::string Elonef::toString(CryptoPP::ByteQueue& bytes) {
+std::string Elonef::toString(const CryptoPP::ByteQueue& bytes) {
     std::string out;
     CryptoPP::ByteQueue backup(bytes);
 
@@ -58,4 +58,16 @@ CryptoPP::ByteQueue Elonef::toQueue(std::string str) {
     CryptoPP::ByteQueue plain;
     plain.Put(reinterpret_cast<const CryptoPP::byte*>(&str[0]), str.size());
     return plain;
+}
+
+CryptoPP::ByteQueue Elonef::toQueue(CryptoPP::SecByteBlock str) {
+    CryptoPP::ByteQueue queue;
+    queue.Put(str.data(), str.SizeInBytes());
+    return queue;
+}
+
+CryptoPP::ByteQueue Elonef::get_message(const uint8_t* data, size_t size){
+    CryptoPP::ByteQueue queue(size);
+    queue.Put((CryptoPP::byte*)data, size);
+    return queue;
 }

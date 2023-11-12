@@ -2,7 +2,6 @@
 
 #include <cryptopp/eccrypto.h>
 #include <websocket.h>
-#include "handlers/serverConnectionHandler.hpp"
 
 namespace Elonef {
     namespace ECDSA {
