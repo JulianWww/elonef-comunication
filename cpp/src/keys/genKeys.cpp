@@ -3,7 +3,6 @@
 #include <cryptopp/osrng.h>
 #include <cryptopp/rsa.h>
 #include <cryptopp-pem/pem.h>
-#include <iostream>
 #include <elonef-communication/types.hpp>
 
 std::string buildIndenter(size_t indent) {
@@ -80,8 +79,8 @@ Elonef::KeyPair Elonef::generateKeyPairECDSA() {
     pub.Save(publicKey);
 
     Elonef::KeyPair keyPair;
-    keyPair.privateKey = toHex(privateKey);
-    keyPair.publicKey  = toHex(publicKey);
+    keyPair.privateKey = toBase64(privateKey);
+    keyPair.publicKey  = toBase64(publicKey);
 
     return keyPair;    
 }

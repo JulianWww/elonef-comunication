@@ -322,7 +322,7 @@ export class ClientConnectionHandler extends ConnectionHandler {
         const reader = new BufferReader(
             await this.send(
                 this.sock, 
-                stringToBuffer(chat_id)
+                Buffer.from(chat_id)
                 , 18
             )
         );

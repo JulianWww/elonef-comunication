@@ -5,17 +5,18 @@
 
 namespace Elonef {
     class PromiseReturnHandler : public ReturnHandler {
-        private: Elonef::DataWaiter<CryptoPP::ByteQueue> data;
+        private: Elonef::DataWaiter<CryptoPP::ByteQueue>* data;
+
+        public: PromiseReturnHandler(Elonef::DataWaiter<CryptoPP::ByteQueue>* data_waiter);
 
         public: virtual void handle(CryptoPP::ByteQueue& content);
-        public: CryptoPP::ByteQueue get();
     };
 }
 
-inline void Elonef::PromiseReturnHandler::handle(CryptoPP::ByteQueue& content) {
-    this->data.set_value(content);
+inline Elonef::PromiseReturnHandler::PromiseReturnHandler(Elonef::DataWaiter<CryptoPP::ByteQueue>* data_waiter) {
+    this->data = data_waiter;
 }
 
-inline CryptoPP::ByteQueue  Elonef::PromiseReturnHandler::get() {
-    return this->data.get();
+inline void Elonef::PromiseReturnHandler::handle(CryptoPP::ByteQueue& content) {
+    this->data->set_value(content);
 }

@@ -4,28 +4,62 @@
 #include <elonef-communication/handlers/serverConnectionHandler.hpp>
 #include <elonef-communication/handlers/clientConnectionHandler.hpp>
 #include <elonef-communication/keys/genKeys.hpp>
+#include <elonef-communication/keys/load_keys.hpp>
+#include <elonef-communication/encryption/aes.hpp>
+#include <elonef-communication/encryption/rsa.hpp>
+#include <elonef-communication/print.hpp>
 #include <unistd.h>
 
 std::unordered_map<std::string, std::string> ca_keys;
 Elonef::ClientKeys* keys;
+CryptoPP::ByteQueue chat_key;
+CryptoPP::ByteQueue chat_key_id;
 
-Elonef::PublicClientKey* get_public_key(std::string id) {
+const Elonef::PublicClientKey* get_public_key(const std::string& id, const std::string& userid) {
     return &keys->public_key;
 }
 
+const CryptoPP::ByteQueue* get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& key, const std::string& userid) {
+    return &chat_key;
+}
+
+const std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*> get_newest_chat_key(const std::string& key, const std::string& userid) {
+    return {&chat_key, &chat_key_id};
+}
+
+void set_chat_key(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys) {
+    //std::cout << keys << std::endl;
+    //std::cout << chat_key << std::endl;
+}
+
+void add_message(const std::string& chat_id, const CryptoPP::ByteQueue& message) {
+    std::cout << message << std::endl;
+}
+
+
 int main(){
     keys = new Elonef::ClientKeys(Elonef::generateClientKeys("server,key", ca_keys, "my user id"));
+    {
+    chat_key_id = Elonef::uuid();
+    auto key = Elonef::toQueue(Elonef::randomKey());
+    chat_key = Elonef::encript_rsa(key, Elonef::load_public_rsa(keys->public_key.data_key.key));
+    }
     srand(time(0));
 
 
-    Elonef::ServerConnectionHandler server("0.0.0.0", 9009, &get_public_key);
+    Elonef::ServerConnectionHandler server("0.0.0.0", 9008, Elonef::SlidingTimeWindow(10, 30), &get_public_key, &get_chat_key, &get_newest_chat_key, &set_chat_key, &add_message);
     server.run();
-    Elonef::ClientConnectionHandler client((unsigned long)3000, "127.0.0.1", 9009, "/", "127.0.0.1:9009");
+    Elonef::ClientConnectionHandler client((unsigned long)3000, "127.0.0.1", 9008, "/", "127.0.0.1:9008");
     client.connect();
     client.run();
     client.authenticate(keys->private_key);
     // sleep(1);
-    client.load_data_keys({"test1", "test2b"});
+    //client.load_data_keys({"test1", "test2b"});
+    //client.load_chat_keys("test1", Elonef::uuid());
+    //std::cout << client.get_newest_chat_key("test Chat") << std::endl;
+    //client.generate_chat_key({"test_user", "eris"}, "test_chat");
+    CryptoPP::ByteQueue message = Elonef::toQueue("test message");
+    client.send_message(message, 0x00, "test_chat");
    
 //    test_aes();
 //    test_ecdsa();

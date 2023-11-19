@@ -2,78 +2,102 @@
 
 #include <unordered_map>
 #include <functional>
+#include <list>
 #include "handlers/messageHandler.hpp"
 #include "handlers/return_handlers/callback_return_handler.hpp"
-
+#include <mutex>
+#include "cache_data.hpp"
+#include "data_waiter.hpp"
+#include "print.hpp"
 
 namespace Elonef {
-    template<typename Key, typename T>
+    template<typename Key, typename T, typename Hash=std::hash<Key>>
     class Cache {
-        private: std::unordered_map<Key, Elonef::DataWaiter<T>> cache;
-        private: std::function<std::vector<std::pair<Key, T>>(CryptoPP::ByteQueue& queue)> decoder;
-        private: std::function<CryptoPP::ByteQueue(const std::vector<Key>& keys)> encoder;
+        private: std::mutex mu;
+        private: std::unordered_map<Key, std::unique_ptr<Elonef::DataWaiter<T>>, Hash> cache;
+        private: std::function<CryptoPP::ByteQueue(const std::list<Key>& keys)> encoder;
 
-        public: Cache(std::function<std::vector<std::pair<Key, T>>(CryptoPP::ByteQueue& queue)> decoder, std::function<CryptoPP::ByteQueue(const std::vector<Key>& keys)> encoder);
+        private: const CryptoPP::byte fetcher;
+
+        public: Cache(std::function<CryptoPP::ByteQueue(const std::list<Key>& keys)> encoder, CryptoPP::byte fetcher);
 
 
         public: template<typename WS, typename Handler>
-        void ensure_presance(const std::vector<Key>& key, WS& ws, Handler* handler);
+        void ensure_presance(const std::vector<Key>& key, WS& ws, Handler* handler, std::function<std::vector<std::pair<Key, T>>(Handler* handler, CryptoPP::ByteQueue& queue)> decoder);
         public: Elonef::DataWaiter<T>* get(const Key& key);
         
-        public: template<typename WS>
-        static void handle(Cache<Key, T>* _this, std::vector<Key>* ptr, CryptoPP::ByteQueue& content);
+        public: template<typename WS, typename Handler>
+        static void handle(Cache<Key, T, Hash>* _this, CacheHandlerData<Key, Handler, T>* ptr, CryptoPP::ByteQueue& content);
 
         public: std::string print();
+
+
+        private: template<typename Handler>
+        static void deleter(Cache<Key, T, Hash>* cache, CacheHandlerData<Key, Handler, T>* data);
     };
 }
 
-template<typename Key, typename T>
-inline Elonef::Cache<Key, T>::Cache(std::function<std::vector<std::pair<Key, T>>(CryptoPP::ByteQueue& queue)> _decoder, std::function<CryptoPP::ByteQueue(const std::vector<Key>& keys)> _encoder) : 
-        encoder(_encoder), decoder(_decoder) {}
+template<typename Key, typename T, typename Hash>
+inline Elonef::Cache<Key, T, Hash>::Cache(
+    std::function<CryptoPP::ByteQueue(const std::list<Key>& keys)> _encoder, 
+    CryptoPP::byte _fetcher) : 
+        encoder(_encoder), fetcher(_fetcher) {}
 
-template<typename Key, typename T>
+template<typename Key, typename T, typename Hash>
 template<typename WS, typename Handler>
-inline void Elonef::Cache<Key, T>::ensure_presance(const std::vector<Key>& key, WS& ws, Handler* handler) {
-    CryptoPP::ByteQueue queue = this->encoder(key);
+inline void Elonef::Cache<Key, T, Hash>::ensure_presance(const std::vector<Key>& key, WS& ws, Handler* handler, std::function<std::vector<std::pair<Key, T>>(Handler* handler, CryptoPP::ByteQueue& queue)> decoder) {
+    std::list<Key> missing;
 
+    this->mu.lock();
     for (const Key& user : key) {
-        this->cache.insert({user, DataWaiter<T>()});
+        if (!this->cache.contains(user)) {
+            this->cache.insert({user, std::make_unique<DataWaiter<T>>()});
+            missing.push_back(user);
+        };
+    }
+    this->mu.unlock();
+    if (missing.size() == 0) {
+        return;
     }
 
-    auto callback = &Cache<Key, T>::handle<WS>;
-    handler->send(ws, queue, 0x10, new CallbackReturnHandler<Cache<Key, T>, std::vector<Key>>(callback, this, new std::vector<std::string>(key)));
+    CryptoPP::ByteQueue queue = this->encoder(missing);
+
+    CacheHandlerData<Key, Handler, T>* data = new CacheHandlerData<Key, Handler, T>(key, handler, decoder);
+    handler->send(ws, queue, this->fetcher, 
+        new CallbackReturnHandler<Cache<Key, T, Hash>, CacheHandlerData<Key, Handler, T>> (&Cache<Key, T, Hash>::handle<WS, Handler>, this, data, &Cache<Key, T, Hash>::deleter<Handler>));
 }
 
-template<typename Key, typename T>
-inline Elonef::DataWaiter<T>* Elonef::Cache<Key, T>::get(const Key& key) {
-    return this->cache[key];
+template<typename Key, typename T, typename Hash>
+inline Elonef::DataWaiter<T>* Elonef::Cache<Key, T, Hash>::get(const Key& key) {
+    return this->cache[key].get();;
 }
 
-template<typename Key, typename T>
-template<typename WS>
-inline void Elonef::Cache<Key, T>::handle(Cache<Key, T>* _this, std::vector<Key>* users, CryptoPP::ByteQueue& content) {
-    std::vector<std::pair<Key, T>> keys = _this->decoder(content);
-    std::cout << keys.size() << std::endl;
+template<typename Key, typename T, typename Hash>
+template<typename WS, typename Handler>
+inline void Elonef::Cache<Key, T, Hash>::handle(Cache<Key, T, Hash>* _this, CacheHandlerData<Key, Handler, T>* data, CryptoPP::ByteQueue& content) {
+    std::vector<std::pair<Key, T>> keys = data->decode(content);
 
+    _this->mu.lock();
     for (std::pair<Key, T>& key : keys) {
-        _this->cache[key.first].set_value(key.second);
-        users->erase(std::find(users->begin(), users->end(), key.first));
+        _this->cache[key.first]->set_value(key.second);
+        data->users.erase(std::find(data->users.begin(), data->users.end(), key.first));
     }
 
-    for (std::string& user : *users) {
+    for (Key& user : data->users) {
         //_this->cache[user].set_value();
         _this->cache.erase(user);
     }
+    _this->mu.unlock();
 
-    delete users;
+    delete data;
 }
 
-template<typename Key, typename T>
-std::string Elonef::Cache<Key, T>::print() {
+template<typename Key, typename T, typename Hash>
+std::string Elonef::Cache<Key, T, Hash>::print() {
     std::string out;
     for (auto& element : this->cache) {
         out = out + element.first + "\t";
-        if (check_if_future_is_ready<CryptoPP::RSA::PublicKey>(element.second.future)) {
+        if (check_if_future_is_ready<T>(element.second->future)) {
             out = out + "true";
         }
         else {
@@ -82,4 +106,11 @@ std::string Elonef::Cache<Key, T>::print() {
         out = out + "\n";
     }
     return out;
+}
+
+
+template<typename Key, typename T, typename Hash>
+template<typename Handler>
+void Elonef::Cache<Key, T, Hash>::deleter(Cache<Key, T, Hash>* cache, CacheHandlerData<Key, Handler, T>* data) {
+    delete data;
 }

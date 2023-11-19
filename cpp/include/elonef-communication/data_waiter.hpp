@@ -1,11 +1,13 @@
 #pragma once
 
 #include <future>
+#include <mutex>
 
 namespace Elonef {
     template<typename T>
     class DataWaiter {
         protected: std::promise<T> promise;
+        private: std::mutex mu;
         public: std::future<T> future;
 
         public: DataWaiter();
@@ -16,6 +18,7 @@ namespace Elonef {
         public: void set_value(T&& value);
         public: void set_value(T& value);
         public: void set_value();
+        public: void reject(std::string reason);
 
     };
 }
@@ -35,20 +38,36 @@ inline void Elonef::DataWaiter<T>::wait() {
 
 template<typename T>
 inline void Elonef::DataWaiter<T>::set_value(const T&& value) {
-    return this->promise.set_value(value);
+    //this->mu.lock();
+    this->promise.set_value(value);
+    //this->mu.unlock();
 }
 
 template<typename T>
 inline void Elonef::DataWaiter<T>::set_value(T&& value) {
-    return this->promise.set_value(value);
+    //this->mu.lock();
+    this->promise.set_value(value);
+    //this->mu.unlock();
 }
 
 template<typename T>
 inline void Elonef::DataWaiter<T>::set_value(T& value) {
-    return this->promise.set_value(value);
+    //this->mu.lock();
+    this->promise.set_value(value);
+    //this->mu.unlock();
 }
 
 template<typename T>
 inline void Elonef::DataWaiter<T>::set_value() {
-    return this->promise.set_value();
+    //this->mu.lock();
+    this->promise.set_value();
+    //this->mu.unlock();
+}
+
+template<typename T>
+inline void Elonef::DataWaiter<T>::reject(std::string reason) {
+    std::runtime_error* err = new std::runtime_error(reason);
+    //this->mu.lock();
+    this->promise.set_exception(err);
+    //this->mu.unlock();
 }

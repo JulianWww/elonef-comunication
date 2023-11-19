@@ -1,5 +1,6 @@
 #include <elonef-communication/encoding/encoding.hpp>
 #include <elonef-communication/utils.hpp>
+#include <nlohmann/json.hpp>
 #include <iostream>
 
 CryptoPP::ByteQueue Elonef::toBytes(size_t number) {
@@ -21,7 +22,7 @@ CryptoPP::ByteQueue Elonef::toBytes_short(size_t number) {
     que.Put(number % 256);
     return que;
 }
-CryptoPP::ByteQueue Elonef::toBytes(std::string str, CryptoPP::ByteQueue(*number_encoder)(size_t num)) {
+CryptoPP::ByteQueue Elonef::toBytes(const std::string& str, CryptoPP::ByteQueue(*number_encoder)(size_t num)) {
     auto queue = Elonef::toQueue(str);
     return toBytes(queue, number_encoder);
 }
@@ -33,6 +34,21 @@ CryptoPP::ByteQueue Elonef::toBytes(CryptoPP::ByteQueue queue, CryptoPP::ByteQue
     return out;    
 }
 
-CryptoPP::ByteQueue Elonef::vectorToBytes(const std::vector<std::string>& keys) {
+CryptoPP::ByteQueue Elonef::toBytes_static_size(const CryptoPP::ByteQueue& queue) {
+    return queue;
+}
+
+CryptoPP::ByteQueue Elonef::listToBytes(const std::list<std::string>& keys) {
     return toBytes(keys.begin(), keys.end());
+}
+
+CryptoPP::ByteQueue Elonef::stringQueuePairListToBuffer(const std::list<std::pair<std::string, CryptoPP::ByteQueue>>& value) {
+    return toBytes(value.begin(), value.end());
+}
+
+CryptoPP::ByteQueue Elonef::signedKeyToBytes(const SignedKey& key) {
+    nlohmann::json out;
+    out["key"] = key.key;
+    out["signatures"] = key.signatures;
+    return toQueue(out.dump());
 }

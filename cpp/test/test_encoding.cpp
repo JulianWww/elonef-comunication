@@ -66,6 +66,14 @@ bool test_hex(CryptoPP::SecByteBlock que) {
     return Elonef::toHex(source) == Elonef::toHex(source);
 }
 
+bool test_base64(CryptoPP::SecByteBlock que) {
+    CryptoPP::ByteQueue source;
+    source.Put(que.data(), que.SizeInBytes());
+    auto hex = Elonef::toBase64(source);
+    auto out = Elonef::fromBase64(hex);
+    return Elonef::toHex(source) == Elonef::toHex(source);
+}
+
 void test_encoding() {
     print_test_header("Encoding");
 
@@ -76,4 +84,5 @@ void test_encoding() {
     printSuccess<std::vector<int>>("list", &test_array, LIST);
     printSuccess<size_t>("uuid", &test_uuid, 4096);
     printSuccess<CryptoPP::SecByteBlock>("hex", &test_hex, Elonef::randomBytes(1024));
+    printSuccess<CryptoPP::SecByteBlock>("base64", &test_hex, Elonef::randomBytes(1024));
 }

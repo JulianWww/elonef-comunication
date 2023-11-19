@@ -4,10 +4,11 @@
 #include <cryptopp/modes.h>
 #include <cryptopp/files.h>
 #include <cryptopp/osrng.h>
+#include <cryptopp/base64.h>
 
 CryptoPP::AutoSeededRandomPool Elonef::rng;
 
-std::string Elonef::toHex(CryptoPP::ByteQueue& bytes)
+std::string Elonef::toHex(const CryptoPP::ByteQueue& bytes)
 {
     std::string out;
     CryptoPP::ByteQueue backup(bytes);
@@ -24,6 +25,30 @@ std::string Elonef::toHex(CryptoPP::ByteQueue& bytes)
 CryptoPP::ByteQueue Elonef::fromHex(std::string str) {
     CryptoPP::HexDecoder dec;
     dec.Put((unsigned char*)str.data(), str.length());
+    CryptoPP::ByteQueue bytes;
+    dec.TransferAllTo2(bytes);
+    return bytes;
+}
+
+std::string Elonef::toBase64(CryptoPP::ByteQueue& bytes)
+{
+    std::string out;
+    CryptoPP::ByteQueue backup(bytes);
+
+    CryptoPP::Base64Encoder enc(
+        new CryptoPP::StringSink(out),
+        false
+    );
+    backup.TransferAllTo2(enc);
+    enc.MessageEnd();
+
+    return out;
+}
+
+CryptoPP::ByteQueue Elonef::fromBase64(std::string str) {
+    CryptoPP::Base64Decoder dec;
+    dec.Put((unsigned char*)str.data(), str.length());
+    dec.MessageEnd();
     CryptoPP::ByteQueue bytes;
     dec.TransferAllTo2(bytes);
     return bytes;
@@ -60,7 +85,7 @@ CryptoPP::ByteQueue Elonef::toQueue(std::string str) {
     return plain;
 }
 
-CryptoPP::ByteQueue Elonef::toQueue(CryptoPP::SecByteBlock str) {
+CryptoPP::ByteQueue Elonef::toQueue(const CryptoPP::SecByteBlock& str) {
     CryptoPP::ByteQueue queue;
     queue.Put(str.data(), str.SizeInBytes());
     return queue;

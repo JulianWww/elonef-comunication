@@ -13,6 +13,7 @@
 #include "return_handlers/return_handler.hpp"
 #include <mutex>
 #include <chrono>
+#include "../print.hpp"
 
 namespace Elonef
 {
@@ -87,6 +88,7 @@ inline void Elonef::MessageHandler<WS, T, ConnData>::_handle_message_switch(WS& 
 
     CryptoPP::ByteQueue uuid = Elonef::extractConstantLengthQueue(content, ELONEF_UUID_SIZE);
     CryptoPP::byte type = Elonef::extreactByte(content);
+    
 
     CryptoPP::ByteQueue return_data;
 
@@ -114,10 +116,8 @@ inline void Elonef::MessageHandler<WS, T, ConnData>::_handle_message_switch(WS& 
 
 template<typename WS, typename T, typename ConnData>
 inline void Elonef::MessageHandler<WS, T, ConnData>::handle_return(WS& ws, CryptoPP::ByteQueue& uuid_queue, CryptoPP::ByteQueue& content, ConnData& connData) {
-    
-
     const CryptoPP::SecByteBlock uid = Elonef::toSecBlock(uuid_queue);
-
+    
     this->uuid_map_mu.lock();
     HandlerFunc* func = this->return_uid_map.getAndRelease((char*) uid.data(), 128);
     this->uuid_map_mu.unlock();

@@ -65,13 +65,13 @@ add_library(elonef-communication ${source})
 target_link_libraries(elonef-communication cryptopp cryptopp-pem uuid_v4 binary-search-tree nlohmann_json::nlohmann_json)
 target_include_directories(elonef-communication PUBLIC websocket/)
 
+set_property(TARGET elonef-communication PROPERTY CXX_STANDARD 23)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
 
 target_include_directories(elonef-communication PUBLIC ${CMAKE_SOURCE_DIR}/include)
-set_property(TARGET elonef-communication PROPERTY CXX_STANDARD 17)
 
 add_executable(test_suit ${TEST}) 
 target_link_libraries(test_suit elonef-communication cryptopp cryptopp-pem)

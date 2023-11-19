@@ -158,13 +158,17 @@ export class ServerConnectionHandler extends ConnectionHandler {
             ((await Promise.all(
                 bufferToStringArray(
                     new BufferReader(message)
-                ).map((user: string) => 
-                    this.get_pub_key(user)
-                )
+                ).map((user: string) => {
+                    const out = [
+                        user, 
+                        this.get_pub_key(user)
+                    ] 
+                    return out as [string, PublicClientKey | nothing];
+                })
             ))
-            .filter((user: PublicClientKey | nothing) => !! user) as PublicClientKey[])
+            .filter((data: [string, PublicClientKey | nothing]) => !! data[1]) as [string, PublicClientKey][])
             .map(
-                (key: PublicClientKey) => stringify(key[key_idx])
+                (data: [string, PublicClientKey]) => stringify({user_id: data[0], ...data[1]})
             )
         )
     }
@@ -213,8 +217,7 @@ export class ServerConnectionHandler extends ConnectionHandler {
     }
 
     private async get_newest_chat_key(message: Buffer, userid: string) {
-        const reader = new BufferReader(message);
-        const chat_id = bufferToString(reader);
+        const chat_id = message.toString();
         const key_id = await this.get_chat_newest_chat_key(chat_id);
 
         if (!key_id) {
