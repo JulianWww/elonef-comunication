@@ -5,6 +5,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./node
     steps:
       - uses: actions/checkout@v4
       # Setup .npmrc file to publish to npm
@@ -17,41 +20,34 @@ jobs:
           scope: '@octocat'
 
       - name: Set env
-        working-directory: ./node
         run: |
+          cd node
           echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: set pub version
-        working-directory: ./node
         run: |
           jq '.version |= "${{ env.RELEASE_VERSION }}"' package.json > _package.json
           mv _package.json package.json
 
       - name: Test
-        working-directory: ./node
         run: |
           cat package.json
 
       - name: yarn install
-        working-directory: ./node
         run: yarn
 
       - name: yarn build
-        working-directory: ./node
         run: yarn build
 
       - name: yarn publish
-        working-directory: ./node
         run: yarn publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: create client
-        working-directory: ./node
         run: ./make_client.sh
 
       - name: yarn publish client
-        working-directory: ./node
         run: cd client && yarn build && yarn publish
         env: 
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
