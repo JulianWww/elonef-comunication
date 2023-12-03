@@ -1,3 +1,0 @@
-mkdir tmp
-cd tmp
-
