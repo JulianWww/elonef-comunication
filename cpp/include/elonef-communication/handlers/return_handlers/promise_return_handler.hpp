@@ -10,6 +10,7 @@ namespace Elonef {
         public: PromiseReturnHandler(Elonef::DataWaiter<CryptoPP::ByteQueue>* data_waiter);
 
         public: virtual void handle(CryptoPP::ByteQueue& content);
+        public: virtual void reject(std::__exception_ptr::exception_ptr exception);
     };
 }
 
@@ -19,4 +20,8 @@ inline Elonef::PromiseReturnHandler::PromiseReturnHandler(Elonef::DataWaiter<Cry
 
 inline void Elonef::PromiseReturnHandler::handle(CryptoPP::ByteQueue& content) {
     this->data->set_value(content);
+}
+
+inline void Elonef::PromiseReturnHandler::reject(std::__exception_ptr::exception_ptr err) {
+    data->reject(err);
 }

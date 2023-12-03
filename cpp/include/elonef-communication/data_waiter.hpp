@@ -19,6 +19,7 @@ namespace Elonef {
         public: void set_value(T& value);
         public: void set_value();
         public: void reject(std::string reason);
+        public: void reject(std::__exception_ptr::exception_ptr error);
 
     };
 }
@@ -67,7 +68,10 @@ inline void Elonef::DataWaiter<T>::set_value() {
 template<typename T>
 inline void Elonef::DataWaiter<T>::reject(std::string reason) {
     std::runtime_error* err = new std::runtime_error(reason);
-    //this->mu.lock();
-    this->promise.set_exception(err);
-    //this->mu.unlock();
+    this->reject(err);
+}
+
+template<typename T>
+inline void Elonef::DataWaiter<T>::reject(std::__exception_ptr::exception_ptr error) {
+    this->promise.set_exception(error);
 }

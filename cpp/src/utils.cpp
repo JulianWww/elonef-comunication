@@ -91,8 +91,8 @@ CryptoPP::ByteQueue Elonef::toQueue(const CryptoPP::SecByteBlock& str) {
     return queue;
 }
 
-CryptoPP::ByteQueue Elonef::get_message(const uint8_t* data, size_t size){
-    CryptoPP::ByteQueue queue(size);
-    queue.Put((CryptoPP::byte*)data, size);
+CryptoPP::ByteQueue Elonef::get_message(const std::string& data){
+    CryptoPP::ByteQueue queue(data.size());
+    queue.Put((CryptoPP::byte*)data.c_str(), data.size());
     return queue;
 }

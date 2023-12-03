@@ -4,7 +4,7 @@
 
 
 
-CryptoPP::ByteQueue Elonef::encrypt(CryptoPP::ByteQueue to_encrypt, CryptoPP::SecByteBlock key){
+CryptoPP::ByteQueue Elonef::encrypt(CryptoPP::ByteQueue& to_encrypt, const CryptoPP::SecByteBlock& key){
     CryptoPP::SecByteBlock iv = randomBytes(CryptoPP::AES::BLOCKSIZE);
     CryptoPP::ByteQueue cipher;
 
@@ -20,7 +20,7 @@ CryptoPP::ByteQueue Elonef::encrypt(CryptoPP::ByteQueue to_encrypt, CryptoPP::Se
     return cipher;    
 }
 
-CryptoPP::ByteQueue Elonef::decrypt(CryptoPP::ByteQueue to_decrypt, CryptoPP::SecByteBlock key) {
+CryptoPP::ByteQueue Elonef::decrypt(CryptoPP::ByteQueue& to_decrypt, const CryptoPP::SecByteBlock& key) {
     CryptoPP::SecByteBlock iv(CryptoPP::AES::BLOCKSIZE);
     to_decrypt.Get(iv.data(), CryptoPP::AES::BLOCKSIZE);
 
@@ -37,7 +37,7 @@ CryptoPP::ByteQueue Elonef::decrypt(CryptoPP::ByteQueue to_decrypt, CryptoPP::Se
 }
 
 
-CryptoPP::SecByteBlock Elonef::randomBytes(size_t size) {
+CryptoPP::SecByteBlock Elonef::randomBytes(const size_t& size) {
     CryptoPP::AutoSeededRandomPool prng;
     CryptoPP::SecByteBlock block(size);
     prng.GenerateBlock(block, size);

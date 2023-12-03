@@ -17,5 +17,5 @@ namespace Elonef {
     CryptoPP::ByteQueue toQueue(std::string str);
     CryptoPP::ByteQueue toQueue(const CryptoPP::SecByteBlock& str);
 
-    CryptoPP::ByteQueue get_message(const uint8_t* data, size_t size);
+    CryptoPP::ByteQueue get_message(const std::string& data);
 }

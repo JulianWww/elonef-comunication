@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25.0)
 project(elonef-communication LANGUAGES C CXX)
 
+set(USE_TLS TRUE)
+
 find_package(Git REQUIRED)
 
 if (NOT EXISTS "${CMAKE_SOURCE_DIR}/cryptopp-cmake")
@@ -24,13 +26,6 @@ if (NOT EXISTS "${CMAKE_SOURCE_DIR}/uuid_v4")
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/websocket")
-    execute_process(
-        COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/websocket
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    )
-endif()
-
 if (NOT EXISTS "${CMAKE_SOURCE_DIR}/BinarySearchTree")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/BinarySearchTree
@@ -45,6 +40,19 @@ if (NOT EXISTS "${CMAKE_SOURCE_DIR}/json")
     )
 endif()
 
+if (NOT EXISTS "${CMAKE_SOURCE_DIR}/IXWebSocket")
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/IXWebSocket
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
+else()
+execute_process(
+    COMMAND "${GIT_EXECUTABLE}" pull https://github.com/JulianWww/IXWebSocket
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/IXWebSocket"
+)
+endif()
+
+find_package(OpenSSL REQUIRED)
 
 
 set(CMAKE_SKIP_INSTALL_RULES TRUE)
@@ -53,6 +61,8 @@ add_subdirectory(cryptopp-pem-cmake)
 add_subdirectory(uuid_v4)
 add_subdirectory(BinarySearchTree)
 add_subdirectory(json)
+add_subdirectory(IXWebSocket)
+
 
 FILE(GLOB_RECURSE source src/*)
 file(GLOB_RECURSE TEST "test/*.cpp")
@@ -62,8 +72,7 @@ enable_testing()
 
 
 add_library(elonef-communication ${source})
-target_link_libraries(elonef-communication cryptopp cryptopp-pem uuid_v4 binary-search-tree nlohmann_json::nlohmann_json)
-target_include_directories(elonef-communication PUBLIC websocket/)
+target_link_libraries(elonef-communication PUBLIC cryptopp cryptopp-pem uuid_v4 binary-search-tree nlohmann_json::nlohmann_json ixwebsocket)
 
 set_property(TARGET elonef-communication PROPERTY CXX_STANDARD 23)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
@@ -74,12 +83,15 @@ include(CPack)
 target_include_directories(elonef-communication PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 add_executable(test_suit ${TEST}) 
-target_link_libraries(test_suit elonef-communication cryptopp cryptopp-pem)
+target_link_libraries(test_suit elonef-communication cryptopp cryptopp-pem ixwebsocket)
 set_property(TARGET test_suit PROPERTY CXX_STANDARD 23)
 
-add_executable(server echo_server.cpp)
-add_executable(client echo_client.cpp)
-target_include_directories(server PUBLIC websocket/)
-target_include_directories(client PUBLIC websocket/)
+add_executable(test_server server.cpp)
+target_link_libraries(test_server ixwebsocket OpenSSL::SSL)
+set_property(TARGET test_server PROPERTY CXX_STANDARD 23)
+
+add_executable(test_client client.cpp)
+target_link_libraries(test_client ixwebsocket OpenSSL::SSL)
+set_property(TARGET test_client PROPERTY CXX_STANDARD 23)
 
 add_compile_definitions(ASIO_STANDALONE=1)

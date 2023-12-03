@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cryptopp/eccrypto.h>
-#include <websocket.h>
 
 namespace Elonef {
     namespace ECDSA {
@@ -10,4 +9,17 @@ namespace Elonef {
         typedef CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Signer Signer;
         typedef CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::Verifier Verifier;
     }
+
+    struct Message {
+        CryptoPP::ByteQueue message;
+        std::string sender_id;
+        CryptoPP::byte type;
+        size_t send_time;
+        size_t upload_time;
+
+        // set to true if one of the decoding steps failes
+        bool invalid = false;
+    };
 }
+
+std::ostream& operator<<(std::ostream& stream, const Elonef::Message& msg);

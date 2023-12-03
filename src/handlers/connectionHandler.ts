@@ -140,7 +140,6 @@ export class ConnectionHandler {
 
     async _make_api_request(ws: WebSocket, request_id: Buffer | string, data: Buffer | string, waitForAuth:boolean=true) {
         //await this.ready;
-        console.log("sent");
         return this.send(ws, Buffer.concat([
             stringToBuffer(request_id),
             Buffer.from(data),

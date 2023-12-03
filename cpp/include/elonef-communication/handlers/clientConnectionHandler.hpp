@@ -1,36 +1,23 @@
 #pragma once
 
-#include "connectionHandler.hpp"
-#include "messageHandler.hpp"
-#include "../types.hpp"
-#include <condition_variable>
-#include "../keys/genKeys.hpp"
-#include "../data_waiter.hpp"
 #include <cryptopp/rsa.h>
-#include "client_data/client_auth_data.hpp"
+#include <condition_variable>
+#include "messageHandler.hpp"
 #include "client_data/client_connection_data.hpp"
-#include "../cache.hpp"
+#include "client_data/client_auth_data.hpp"
+#include "../types.hpp"
+#include "../keys/genKeys.hpp"
 #include "../hashing.hpp"
+#include "../data_waiter.hpp"
+#include "../cache.hpp"
 
-
-#define ELONEF_CLIENT_TYPE websocket::WSClient<Elonef::ClientConnectionHandler, Elonef::ClientConnectionData>
 
 namespace Elonef {
-    class ClientConnectionHandler : public ConnectionHandler, public MessageHandler<ELONEF_CLIENT_TYPE::Connection, ClientConnectionHandler, ClientConnectionData> {
-        private: ELONEF_CLIENT_TYPE client;
-
-        private: uint64_t timeout;
-        private: const char* server_ip;
-        private: uint16_t server_port;
-        private: const char* request_uri;
-        private: const char* host;
-        private: const char* origin;
-        private: const char* protocol;
-        private: const char* extensions;
-        private: char* resp_protocol;
-        private: uint32_t resp_protocol_size;
-        private: char* resp_extensions;
-        private: uint32_t resp_extensions_size;
+    class ClientConnectionHandler : public MessageHandler<ClientConnectionHandler, ClientConnectionData> {
+        friend MessageHandler<ClientConnectionHandler, ClientConnectionData>;
+        friend ix::WebSocket;
+        
+        private: ix::WebSocket client;
         
         private: std::unique_ptr<CryptoPP::RSA::PrivateKey> data_key;
         private: std::unique_ptr<Elonef::ECDSA::PrivateKey> sign_key;
@@ -42,25 +29,20 @@ namespace Elonef {
         private: Elonef::Cache<std::string, Elonef::ECDSA::PublicKey> signed_key_cache;
         private: Elonef::Cache<std::pair<std::string, CryptoPP::ByteQueue>, CryptoPP::ByteQueue, std::hash<std::pair<std::string, CryptoPP::ByteQueue>>> chat_key_cache;
 
-        public: ClientConnectionHandler(
-                uint64_t timeout, const char* server_ip, uint16_t server_port, const char* request_uri,
-                const char* host, const char* origin = nullptr, const char* protocol = nullptr,
-                const char* extensions = nullptr, char* resp_protocol = nullptr, uint32_t resp_protocol_size = 0,
-                char* resp_extensions = nullptr, uint32_t resp_extensions_size = 0);
+        public: ClientConnectionHandler(const char* request_uri);
 
-        public: bool connect();
+        public: void connect();
 
-        // called when a new messge is recived
-        public: void onWSMsg(ELONEF_CLIENT_TYPE::Connection& conn, uint8_t opcode, const uint8_t* payload, uint32_t pl_len);
-        // called when a ws socket is closed
-        public: void onWSClose(ELONEF_CLIENT_TYPE::Connection& conn, uint16_t status_code, const char* reason);
+        private: void onOpen(ix::WebSocket& conn);
+        private: void onClose(ix::WebSocket& conn);
 
-        public: void handle_auth(CryptoPP::ByteQueue& uuid, CryptoPP::ByteQueue& content, ClientConnectionData& connData);
-        public: CryptoPP::ByteQueue custom_handler(const CryptoPP::byte& type, CryptoPP::ByteQueue& content, ClientConnectionData& connData);
+        private: void handle_auth(CryptoPP::ByteQueue& uuid, CryptoPP::ByteQueue& content, ClientConnectionData& connData);
+        private: CryptoPP::ByteQueue custom_handler(const CryptoPP::byte& type, CryptoPP::ByteQueue& content, ClientConnectionData& connData);
         // authenticate the connection make sure to call after connect
         public: void authenticate(const Elonef::PrivateClientKey& key);
 
-        public: virtual void run_blocking();
+        public: void start();
+        public: void stop();
 
         private: void wait_for_auth();
 
@@ -71,13 +53,28 @@ namespace Elonef {
         public: void load_chat_keys(const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& key_ids);
         public: std::pair<CryptoPP::ByteQueue, CryptoPP::ByteQueue> get_newest_chat_key(const std::string& str);
         public: void generate_chat_key(const std::vector<std::string>& users, const std::string& chat_id);
-        public: void send_message(const CryptoPP::ByteQueue& message, const CryptoPP::byte message_type, const std::string& chat_id);
+        public: void send_message(CryptoPP::ByteQueue& message, const CryptoPP::byte message_type, const std::string& chat_id);
+        public: std::vector<Elonef::Message> read_messages(const std::string& chat_id, const size_t& msg_id, const size_t& amount_of_messages);
+        public: void read_messages(const std::string& chat_id, const size_t& msg_id, const size_t& amount_of_messages, ReturnHandler* handler);
 
+        public: CryptoPP::ByteQueue make_api_request(const std::string& chat_id, CryptoPP::ByteQueue& data, const bool& wait_for_auth);
+        public: void make_api_request(const std::string& call_id, CryptoPP::ByteQueue& data, const bool& wait_for_auth, ReturnHandler* handler);
+
+
+        public: Elonef::DataWaiter<CryptoPP::RSA::PublicKey>* get_data_key(const std::string& user);
+        public: Elonef::DataWaiter<Elonef::ECDSA::PublicKey>* get_signature_key(const std::string& user);
+        public: Elonef::DataWaiter<CryptoPP::ByteQueue>* get_chat_key(const std::string&, const CryptoPP::ByteQueue& key_id);
+        public: Elonef::DataWaiter<CryptoPP::ByteQueue>* get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& id);
+
+
+        public: std::vector<Message> decode_message(CryptoPP::ByteQueue& queue, const std::string& chat_id);
         private: CryptoPP::ByteQueue decrypt_chat_key(CryptoPP::ByteQueue& queue);
+
 
         private: static std::vector<std::pair<std::string, CryptoPP::RSA::PublicKey>> toRsaPublicVector(ClientConnectionHandler* _this, CryptoPP::ByteQueue& queue);
         private: static std::vector<std::pair<std::string, Elonef::ECDSA::PublicKey>> toECDSAPublicVector(ClientConnectionHandler* _this, CryptoPP::ByteQueue& queue);
         private: static std::vector<std::pair<std::pair<std::string, CryptoPP::ByteQueue>, CryptoPP::ByteQueue>> toChatKeyVector(ClientConnectionHandler* _this, CryptoPP::ByteQueue& queue);
+        private: static bool is_authenticated(ClientConnectionData& data);
     };
     
 }

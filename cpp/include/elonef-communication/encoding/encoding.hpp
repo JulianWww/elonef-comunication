@@ -3,7 +3,6 @@
 #include <cryptopp/queue.h>
 #include "../keys/genKeys.hpp"
 #include <iterator>
-#include <iostream>
 
 namespace Elonef {
     CryptoPP::ByteQueue toBytes(size_t number);

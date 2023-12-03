@@ -17,7 +17,7 @@ bool test_verification(std::string message) {
     try {
         throw Elonef::VerificationFailed(message);
     }
-    catch (const Elonef::SecurityError& err) {
+    catch (const Elonef::VerificationFailed& err) {
         return err.what() == message;
     }
 

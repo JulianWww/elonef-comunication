@@ -2,12 +2,13 @@
 
 #include <stdexcept>
 
-namespace Elonef {
-    class SecurityError : public std::runtime_error {
-        public: inline SecurityError(std::string what) : std::runtime_error(what) {}
-    };
+#define ELONEF_ERROR(x) class x : public std::runtime_error { public: inline x(std::string what) : std::runtime_error(what) {} }
 
-    class VerificationFailed : public SecurityError {
-        public: inline VerificationFailed(std::string what) : SecurityError(what) {}
-    };
+namespace Elonef {
+    ELONEF_ERROR(SecurityError);
+    ELONEF_ERROR(VerificationFailed);
+    ELONEF_ERROR(ForwardedError);
+    ELONEF_ERROR(RemoteError);
 }
+
+#undef ELONEF_ERROR

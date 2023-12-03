@@ -7,7 +7,8 @@
 
 bool test_en_and_decoding(std::string test_msg) {
     CryptoPP::SecByteBlock key = Elonef::randomKey();
-    CryptoPP::ByteQueue encrypted = Elonef::encrypt(Elonef::toQueue(test_msg), key);
+    CryptoPP::ByteQueue msg_queue = Elonef::toQueue(test_msg);
+    CryptoPP::ByteQueue encrypted = Elonef::encrypt(msg_queue, key);
     CryptoPP::ByteQueue decrypted = Elonef::decrypt(encrypted, key);
 
     return test_msg == Elonef::toString(decrypted);

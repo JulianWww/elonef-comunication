@@ -1,12 +1,12 @@
 #pragma once
 
-#include <elonef-communication/handlers/connectionHandler.hpp>
 #include <elonef-communication/types.hpp>
 #include <elonef-communication/handlers/messageHandler.hpp>
-#include "../keys/genKeys.hpp"
+#include <ixwebsocket/IXWebSocketServer.h>
 #include "../sliding_time_window.hpp"
+#include "../keys/genKeys.hpp"
+#include <unordered_set>
 
-#define ELONEF_SERVER_TYPE websocket::WSServer<Elonef::ServerConnectionHandler, Elonef::ServerConnectionData>
 
 namespace Elonef {
     struct ServerConnectionData {
@@ -15,14 +15,17 @@ namespace Elonef {
         std::string uid;
     };
 
-    class ServerConnectionHandler : public ConnectionHandler, public MessageHandler<ELONEF_SERVER_TYPE::Connection, ServerConnectionHandler, ServerConnectionData> {
-        private: ELONEF_SERVER_TYPE server;
+    class ServerConnectionHandler : public MessageHandler<ServerConnectionHandler, ServerConnectionData>, public ix::WebSocketServer {
+        friend MessageHandler<ServerConnectionHandler, ServerConnectionData>;
 
+        public: typedef std::pair<std::vector<CryptoPP::ByteQueue>::iterator, std::vector<CryptoPP::ByteQueue>::iterator> VectorRange;
+    
         private: std::function<const PublicClientKey*(const std::string& id, const std::string& userid)> get_public_key;
         private: std::function<const CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> chat_key_fetcher;
         private: std::function<const std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*>(const std::string& chat_id, const std::string& userid)> newest_chat_key_fetcher;
         private: std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter;
         private: std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter;
+        private: std::function<VectorRange(const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher;
         
         private: SlidingTimeWindow sendTimeUploadWindow;
 
@@ -31,23 +34,23 @@ namespace Elonef {
             std::function<const CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> get_chat_key,
             std::function<const std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*>(const std::string& chat_id, const std::string& userid)> newest_chat_key_fetcher,
             std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter,
-            std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter
+            std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter,
+            std::function<VectorRange(const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher
         );
-        public: ~ServerConnectionHandler();
+        
 
         // called before a connection is opend.
-        public: bool onWSConnect(ELONEF_SERVER_TYPE::Connection& conn, const char* request_uri, const char* host, const char* origin, const char* protocol,
+        private: bool onWSConnect(ix::WebSocket& conn, const char* request_uri, const char* host, const char* origin, const char* protocol,
                    const char* extensions, char* resp_protocol, uint32_t resp_protocol_size, char* resp_extensions,
                    uint32_t resp_extensions_size);
-        // callded after a connection is fully established.
-        public: void onWSConnectionEstablished(ELONEF_SERVER_TYPE::Connection& conn);
-        // called when a new messge is recived
-        public: void onWSMsg(ELONEF_SERVER_TYPE::Connection& conn, uint8_t opcode, const uint8_t* payload, uint32_t pl_len);
-        // called when a ws socket is closed
-        public: void onWSClose(ELONEF_SERVER_TYPE::Connection& conn, uint16_t status_code, const char* reason);
+        
+        private: void onOpen(ix::WebSocket& conn);
+        private: void onClose(ix::WebSocket& conn);
 
-        public: void handle_auth(CryptoPP::ByteQueue& uuid, CryptoPP::ByteQueue& content, ServerConnectionData& connData);
-        public: CryptoPP::ByteQueue custom_handler(const CryptoPP::byte& type, CryptoPP::ByteQueue& content, ServerConnectionData& connData);
+        private: void handle_auth(CryptoPP::ByteQueue& uuid, CryptoPP::ByteQueue& content, ServerConnectionData& connData);
+        private: CryptoPP::ByteQueue custom_handler(const CryptoPP::byte& type, CryptoPP::ByteQueue& content, ServerConnectionData& connData);
+
+        public: void make_api_request(const std::string& call_id, CryptoPP::ByteQueue& content, const std::unordered_set<std::string>& users, std::function<void(ServerConnectionHandler*, ix::WebSocket*, CryptoPP::ByteQueue&)> handler);
 
 
 
@@ -55,7 +58,7 @@ namespace Elonef {
         private: static const SignedKey* get_data_key_for_user(ServerConnectionHandler* _this, const std::string& uid, const std::string& requester);
         private: static const CryptoPP::ByteQueue* get_chat_key_for_user(ServerConnectionHandler* _this, const std::pair<std::string, CryptoPP::ByteQueue>& key_id, const std::string& requester);
 
-        private: static void auth(Elonef::ServerConnectionHandler* _this, ELONEF_SERVER_TYPE::Connection* conn, CryptoPP::ByteQueue& queue);
+        private: static void auth(Elonef::ServerConnectionHandler* _this, ix::WebSocket* conn, CryptoPP::ByteQueue& queue);
 
         private: template<typename Key, typename T>
         CryptoPP::ByteQueue buid_cache_request_return( 
@@ -71,12 +74,12 @@ namespace Elonef {
         private: CryptoPP::ByteQueue get_newest_chat_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData);
         private: void set_chat_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData);
         private: void add_message(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData);
+        private: CryptoPP::ByteQueue read_message(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData);
 
         private: bool verify_message_authenticity(CryptoPP::ByteQueue message, const std::string& userid);
         private: bool verify_message_signature(CryptoPP::ByteQueue& message, const std::string& userid);
         private: bool verify_send_time(CryptoPP::ByteQueue& message);
-
-        public: virtual void run_blocking();
+        private: static bool is_authenticated(ServerConnectionData& data);
     };
 };
 

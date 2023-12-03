@@ -8,7 +8,6 @@
 #include <elonef-communication/keys/genKeys.hpp>
 #include <elonef-communication/keys/load_keys.hpp>
 #include <elonef-communication/utils.hpp>
-#include <elonef-communication/print.hpp>
 #include <nlohmann/json.hpp>
 #include <iostream>
 
@@ -17,26 +16,28 @@ Elonef::ServerConnectionHandler::ServerConnectionHandler(std::string ip, uint16_
             std::function<const CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> get_chat_key,
             std::function<const std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*>(const std::string& chat_id, const std::string& userid)> newest_chat_key_fetcher,
             std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter,
-            std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter
-        ): MessageHandler(this), sendTimeUploadWindow(window) {
+            std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter,
+            std::function<VectorRange(const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher
+        ): MessageHandler(this), sendTimeUploadWindow(window), ix::WebSocketServer(ix::customData<ServerConnectionData>(), port, ip) {
     this->get_public_key = get_public_key;
     this->chat_key_fetcher = get_chat_key;
     this->newest_chat_key_fetcher = newest_chat_key_fetcher;
     this->chat_key_setter = chat_key_setter;    
     this->message_setter = message_setter;
+    this->message_fetcher = message_fetcher;
 
-    if (!this->server.init(ip.data(), port)) {
-      std::cout << "wsserver init failed: " << this->server.getLastError() << std::endl;
-      return;
+    this->setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {this->handle_message(webSocket, msg);});
+
+    auto res = this->listen();
+    if (!res.first)
+    {
+        throw std::runtime_error(res.second);
     }
 }
 
-Elonef::ServerConnectionHandler::~ServerConnectionHandler() {
-    this->stop();
-}
 
 bool Elonef::ServerConnectionHandler::onWSConnect(
-    ELONEF_SERVER_TYPE::Connection& conn, 
+    ix::WebSocket& conn, 
     const char* request_uri, 
     const char* host, 
     const char* origin, 
@@ -49,32 +50,30 @@ bool Elonef::ServerConnectionHandler::onWSConnect(
     return true;
 }
 
-void Elonef::ServerConnectionHandler::auth(Elonef::ServerConnectionHandler* _this, ELONEF_SERVER_TYPE::Connection* conn, CryptoPP::ByteQueue& queue) {
-    conn->user_data.authenticated = false;
+void Elonef::ServerConnectionHandler::auth(Elonef::ServerConnectionHandler* _this, ix::WebSocket* conn, CryptoPP::ByteQueue& queue) {
+    ServerConnectionData* user_data = conn->getCustomData<ServerConnectionData>();
+    user_data->authenticated = false;
     std::string uid = Elonef::toDynamicSizeString(queue);
     Elonef::ECDSA::PublicKey key = Elonef::load_public_ecdsa(_this->get_public_key(uid, uid)->sign_key.key);
-    conn->user_data.authenticated = Elonef::verify_nonstreamable(conn->user_data.auth_data, queue, key);
-    if (conn->user_data.authenticated) {
-        conn->user_data.uid = uid;
+    user_data->authenticated = Elonef::verify_nonstreamable(user_data->auth_data, queue, key);
+    if (user_data->authenticated) {
+        user_data->uid = uid;
         _this->send(*conn, (CryptoPP::byte)0x10);
     }
     else {
+        std::cout << "auth kill" << std::endl;
         conn->close();
     }
 }
 
-void Elonef::ServerConnectionHandler::onWSConnectionEstablished(ELONEF_SERVER_TYPE::Connection& conn) {
+void Elonef::ServerConnectionHandler::onOpen(ix::WebSocket& conn) {
     auto data = Elonef::toQueue(Elonef::randomBytes(1024));
-    conn.user_data.auth_data = data;
-    this->send(conn, data, Elonef::AUTH, new Elonef::CallbackReturnHandler<ServerConnectionHandler, ELONEF_SERVER_TYPE::Connection>(&auth, this, &conn));
+    conn.getCustomData<ServerConnectionData>()->auth_data = data;
+    this->send(conn, data, Elonef::AUTH, new Elonef::CallbackReturnHandler<ServerConnectionHandler, ix::WebSocket>(&auth, this, &conn));
 }
 
-void Elonef::ServerConnectionHandler::onWSMsg(ELONEF_SERVER_TYPE::Connection& conn, uint8_t opcode, const uint8_t* payload, uint32_t pl_len){
-    this->handle_message(conn, payload, pl_len, conn.user_data);
-}
+void Elonef::ServerConnectionHandler::onClose(ix::WebSocket& conn) {
 
-void Elonef::ServerConnectionHandler::onWSClose(ELONEF_SERVER_TYPE::Connection& conn, uint16_t status_code, const char* reason){
-    std::cout << "connection closed" << std::endl;
 }
 
 void Elonef::ServerConnectionHandler::handle_auth(CryptoPP::ByteQueue& uuid, CryptoPP::ByteQueue& content, ServerConnectionData& connData) {}
@@ -83,7 +82,7 @@ CryptoPP::ByteQueue Elonef::ServerConnectionHandler::custom_handler(const Crypto
     if (!connData.authenticated) {
         return CryptoPP::ByteQueue();
     }
-    std::cout << (int) type << std::endl;
+    //std::cout << (int) type << std::endl;
     switch (type) {
         case 0x10 : {
             return this->get_data_key(content, connData);
@@ -102,6 +101,9 @@ CryptoPP::ByteQueue Elonef::ServerConnectionHandler::custom_handler(const Crypto
         case 0x14 : {
             return this->get_signature_key(content, connData);
         }
+        case 0x15 : {
+            return this->read_message(content, connData);
+        }
         case 0x16 : {
             return this->get_chat_key(content, connData);
         }
@@ -109,6 +111,13 @@ CryptoPP::ByteQueue Elonef::ServerConnectionHandler::custom_handler(const Crypto
 
 
     return CryptoPP::ByteQueue();
+}
+
+void Elonef::ServerConnectionHandler::make_api_request(const std::string& call_id, CryptoPP::ByteQueue& content, const std::unordered_set<std::string>& users, std::function<void(ServerConnectionHandler*, ix::WebSocket*, CryptoPP::ByteQueue&)> callback) {
+    for (const std::shared_ptr<ix::WebSocket>& user : this->getClients()) {
+        if (users.contains(user->getCustomData<ServerConnectionData>()->uid))
+            this->send_api_request(*user.get(), call_id, content, new CallbackReturnHandler(callback, this, user.get()));
+    }
 }
 
 const Elonef::SignedKey* Elonef::ServerConnectionHandler::get_signed_key_for_user(ServerConnectionHandler* _this, const std::string& uid, const std::string& requester) {
@@ -138,7 +147,7 @@ CryptoPP::ByteQueue Elonef::ServerConnectionHandler::get_data_key(CryptoPP::Byte
 
 CryptoPP::ByteQueue Elonef::ServerConnectionHandler::get_signature_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData) {
     std::vector<std::string> keys = toIterable<std::vector<std::string>, std::string>(queue, &toDynamicSizeString, make_vector);
-    return this->buid_cache_request_return<std::string, SignedKey>(keys, connData, &get_data_key_for_user, &signedKeyToBytes);
+    return this->buid_cache_request_return<std::string, SignedKey>(keys, connData, &get_signed_key_for_user, &signedKeyToBytes);
 }
 
 CryptoPP::ByteQueue Elonef::ServerConnectionHandler::get_chat_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData) {
@@ -179,6 +188,15 @@ void Elonef::ServerConnectionHandler::add_message(CryptoPP::ByteQueue& client_me
 
 }
 
+CryptoPP::ByteQueue Elonef::ServerConnectionHandler::read_message(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData) {
+    std::string chat_id = Elonef::toDynamicSizeString(queue);
+    size_t first_msg_idx = Elonef::toSize_T(queue);
+    size_t msg_count = Elonef::toSize_T(queue);
+    VectorRange range = this->message_fetcher(chat_id, first_msg_idx, msg_count);
+    return Elonef::toBytes(range.first, range.second);
+}
+
+
 
 bool Elonef::ServerConnectionHandler::verify_message_authenticity(CryptoPP::ByteQueue message, const std::string& userid) {
     return this->verify_message_signature(message, userid);
@@ -198,14 +216,7 @@ bool Elonef::ServerConnectionHandler::verify_send_time(CryptoPP::ByteQueue& mess
     size_t send_time = toSize_T(message);
     return this->sendTimeUploadWindow.in_window(send_time);
 }
-
-
-
-void Elonef::ServerConnectionHandler::run_blocking() {
-    while (this->running) {
-        this->server.poll(this);
-        std::this_thread::yield();
-        this->clean_executors();
-        std::this_thread::yield();
-    }
+bool Elonef::ServerConnectionHandler::is_authenticated(ServerConnectionData& data) {
+    return data.authenticated;
 }
+

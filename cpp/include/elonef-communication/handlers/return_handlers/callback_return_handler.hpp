@@ -16,6 +16,7 @@ namespace Elonef {
         public: ~CallbackReturnHandler();
 
         public: virtual void handle(CryptoPP::ByteQueue& content);
+        public: virtual void reject(std::__exception_ptr::exception_ptr error);
 
         private: static void defaultDeleter(T* handler, WS* connection);
     };
@@ -41,6 +42,11 @@ Elonef::CallbackReturnHandler<T, WS>::~CallbackReturnHandler() {
 template<typename T, typename WS>
 inline void Elonef::CallbackReturnHandler<T, WS>::handle(CryptoPP::ByteQueue& content) {
     callback(this->_handler, this->connection, content);
+}
+
+template<typename T, typename WS>
+inline void Elonef::CallbackReturnHandler<T, WS>:: reject(std::__exception_ptr::exception_ptr error) {
+    // TODO
 }
 
 template<typename T, typename WS>
