@@ -20,8 +20,9 @@ jobs:
         run: mkdir -p cpp/build
 
       - name: Configure Project
-        working-directory: cpp
         uses: threeal/cmake-action@v1.3.0
+        with:
+          source-dir: cpp
       
       - name: Setup cmake
         run: cmake ..
