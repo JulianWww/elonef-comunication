@@ -1,9 +1,10 @@
 name: Development Builds C++
 
-on:
-  push:
-    paths:
-      - "cpp/**"
+on: [push]
+#on:
+#  push:
+#    paths:
+#      - "cpp/**"
 
 jobs:
   node:
@@ -15,10 +16,11 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: make build dir
-        working-directory: ./cpp
-        run: mkdir build
+        working-directory: .
+        run: mkdir -p cpp/build
 
       - name: Configure Project
+        working-directory: cpp
         uses: threeal/cmake-action@v1.3.0
       
       - name: Setup cmake
