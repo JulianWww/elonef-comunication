@@ -18,11 +18,10 @@ jobs:
 
       - name: Run install
         uses: borales/actions-yarn@v4
-        working-directory: ./node
         with:
-          cmd: install # will run `yarn install` command
+          cmd: -cwd node install # will run `yarn install` command
+          
       - name: Build the app
         uses: borales/actions-yarn@v4
-        working-directory: ./node
         with:
-          cmd: build
+          cmd: -cwd node build
