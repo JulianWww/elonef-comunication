@@ -29,25 +29,30 @@ jobs:
 
       - name: Set Node.js 18.x
         uses: actions/setup-node@v3
+        working-directory: ./node
         with:
           node-version: 18.x
 
       - name: Run install
         uses: borales/actions-yarn@v4
+        working-directory: ./node
         with:
           cmd: install # will run `yarn install` command
 
       - name: Generate Documentation
         uses: borales/actions-yarn@v4
+        working-directory: ./node
         with:
           cmd: doc
       
       - name: Generate Package
         uses: borales/actions-yarn@v4
+        working-directory: ./node
         with:
           cmd: build
       
       - name: compress to tar
+        working-directory: ./node
         run: |
           ./make_package.sh
           ./make_client.sh
@@ -61,7 +66,7 @@ jobs:
         uses: actions/upload-pages-artifact@v2
         with:
           # Upload entire repository
-          path: 'docs'
+          path: 'node/docs'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2

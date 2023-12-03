@@ -85,13 +85,4 @@ target_include_directories(elonef-communication PUBLIC ${CMAKE_SOURCE_DIR}/inclu
 add_executable(test_suit ${TEST}) 
 target_link_libraries(test_suit elonef-communication cryptopp cryptopp-pem ixwebsocket)
 set_property(TARGET test_suit PROPERTY CXX_STANDARD 23)
-
-add_executable(test_server server.cpp)
-target_link_libraries(test_server ixwebsocket OpenSSL::SSL)
-set_property(TARGET test_server PROPERTY CXX_STANDARD 23)
-
-add_executable(test_client client.cpp)
-target_link_libraries(test_client ixwebsocket OpenSSL::SSL)
-set_property(TARGET test_client PROPERTY CXX_STANDARD 23)
-
 add_compile_definitions(ASIO_STANDALONE=1)
