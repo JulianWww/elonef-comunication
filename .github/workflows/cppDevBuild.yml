@@ -1,0 +1,28 @@
+name: Development Builds C++
+
+on:
+  push:
+    paths:
+      - "cpp/**"
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./cpp/build
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: make build dir
+        working-directory: ./cpp
+        run: mkdir build
+
+      - name: Configure Project
+        uses: threeal/cmake-action@v1.3.0
+      
+      - name: Setup cmake
+        run: cmake ..
+      
+      - name: Build
+        run: make

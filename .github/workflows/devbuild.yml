@@ -1,12 +1,13 @@
 name: Development Builds
 
-on: [push]
+on:
+  push:
+    paths:
+      - "node/**"
 
 jobs:
-  Build:
-
+  node:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
