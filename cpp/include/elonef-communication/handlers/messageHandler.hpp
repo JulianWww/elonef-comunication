@@ -16,6 +16,7 @@
 #include "../encoding/decoding.hpp"
 #include <ixwebsocket/IXWebSocket.h>
 #include <ixwebsocket/IXConnectionState.h>
+#include "../data_waiter.hpp"
 
 
 namespace Elonef
@@ -24,7 +25,6 @@ namespace Elonef
     class MessageHandler {
         private: typedef std::function<CryptoPP::ByteQueue(CryptoPP::ByteQueue& content, ConnData& connData)> ApiCallbackFunc;
 
-        private: bool cleaning;
         private: std::mutex cleaning_mu;
 
         private: T* _this;
@@ -53,6 +53,7 @@ namespace Elonef
         public: void send(ix::WebSocket& conn, CryptoPP::byte msg_type);
         public: void send(ix::WebSocket& conn, CryptoPP::ByteQueue& uuid, CryptoPP::ByteQueue& data, CryptoPP::byte msg_type);
         private: void send(ix::WebSocket& conn, const std::string& queue);
+        private: void waitForReady(ix::WebSocket& conn) const;
 
         protected: void clean_executors();
 
@@ -248,6 +249,15 @@ inline void Elonef::MessageHandler<T, ConnData>::send(ix::WebSocket& conn, Crypt
 template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::send(ix::WebSocket& conn, const std::string& data) {
     conn.sendBinary(data);
+}
+
+template<typename T, typename ConnData>
+inline void Elonef::MessageHandler<T, ConnData>::waitForReady(ix::WebSocket& conn) const {
+    ix::ReadyState readyState = conn.getReadyState();
+    while (readyState == ix::ReadyState::Connecting) {
+        std::this_thread::yield();
+        readyState = conn.getReadyState();
+    }
 }
 
 template<typename T, typename ConnData>
