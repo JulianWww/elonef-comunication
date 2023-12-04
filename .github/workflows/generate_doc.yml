@@ -35,20 +35,21 @@ jobs:
       - name: Run install
         uses: borales/actions-yarn@v4
         with:
-          cmd: install # will run `yarn install` command
+          cmd: --cmd node install # will run `yarn install` command
 
       - name: Generate Documentation
         uses: borales/actions-yarn@v4
         with:
-          cmd: doc
+          cmd: --cmd node doc
       
       - name: Generate Package
         uses: borales/actions-yarn@v4
         with:
-          cmd: build
+          cmd: --cmd node build
       
       - name: compress to tar
         run: |
+          cd node
           ./make_package.sh
           ./make_client.sh
 
@@ -61,7 +62,7 @@ jobs:
         uses: actions/upload-pages-artifact@v2
         with:
           # Upload entire repository
-          path: 'docs'
+          path: 'node/docs'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2

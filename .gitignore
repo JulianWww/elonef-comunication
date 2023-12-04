@@ -1,4 +1,9 @@
 # Logs
+cpp/BinarySearchTree/
+cpp/IXWebSocket/
+cpp/json/
+cpp/.vscode/
+cpp/build/
 logs
 *.log
 npm-debug.log*
@@ -133,3 +138,10 @@ dist
 .pnp.*
 lib/
 docs/
+
+# cpp
+# dependancies 
+cpp/uuid_v4/
+cpp/cryptopp-cmake/
+cpp/cryptopp-pem-cmake/
+cpp/build/

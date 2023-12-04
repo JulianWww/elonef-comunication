@@ -1,12 +1,13 @@
 name: Development Builds
 
-on: [push]
+on:
+  push:
+    paths:
+      - "node/**"
 
 jobs:
-  Build:
-
+  node:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
@@ -19,8 +20,9 @@ jobs:
       - name: Run install
         uses: borales/actions-yarn@v4
         with:
-          cmd: install # will run `yarn install` command
+          cmd: --cwd node install # will run `yarn install` command
+
       - name: Build the app
         uses: borales/actions-yarn@v4
         with:
-          cmd: build
+          cmd: --cwd node build

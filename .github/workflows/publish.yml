@@ -5,10 +5,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./node
     steps:
       - uses: actions/checkout@v4
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
+        working-directory: ./node
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
@@ -17,6 +21,7 @@ jobs:
 
       - name: Set env
         run: |
+          cd node
           echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: set pub version
