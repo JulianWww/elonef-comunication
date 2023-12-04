@@ -84,9 +84,9 @@ inline Elonef::MessageHandler<T, ConnData>::MessageHandler(T* _this_): _this(_th
 
 template<typename T, typename ConnData>
 inline Elonef::MessageHandler<T, ConnData>::~MessageHandler() {
-    this->running_handlers.remove_if(
-        &wair_for_future_is_ready
-    );
+    for (std::future<void>& handler : this->running_handlers) {
+        handler.wait();
+    }
 }
 
 template<typename T, typename ConnData>
