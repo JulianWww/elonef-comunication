@@ -5,50 +5,50 @@ set(USE_TLS TRUE)
 
 find_package(Git REQUIRED)
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/cryptopp-cmake")
+if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/cryptopp-cmake")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/abdes/cryptopp-cmake.git
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/cryptopp-pem-cmake")
+if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/cryptopp-pem-cmake")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/cryptopp-pem-cmake
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/uuid_v4")
+if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/uuid_v4")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/crashoz/uuid_v4
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/BinarySearchTree")
+if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/BinarySearchTree")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/BinarySearchTree
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/json")
+if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/json")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/nlohmann/json
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/IXWebSocket")
+if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/IXWebSocket")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/IXWebSocket
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     )
 else()
 execute_process(
     COMMAND "${GIT_EXECUTABLE}" pull https://github.com/JulianWww/IXWebSocket
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/IXWebSocket"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/IXWebSocket"
 )
 endif()
 
@@ -80,7 +80,7 @@ set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
 
-target_include_directories(elonef-communication PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(elonef-communication PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 
 add_executable(test_suit ${TEST}) 
 target_link_libraries(test_suit elonef-communication cryptopp cryptopp-pem ixwebsocket)
