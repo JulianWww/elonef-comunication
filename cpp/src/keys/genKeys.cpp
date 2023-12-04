@@ -4,6 +4,9 @@
 #include <cryptopp/rsa.h>
 #include <cryptopp-pem/pem.h>
 #include <elonef-communication/types.hpp>
+#include <elonef-communication/encoding/encoding.hpp>
+#include <elonef-communication/encoding/decoding.hpp>
+#include <iostream>
 
 std::string buildIndenter(size_t indent) {
     std::string indenter;
@@ -13,36 +16,50 @@ std::string buildIndenter(size_t indent) {
     return indenter;
 }
 
-std::string Elonef::SignedKey::print(size_t indent) {
-    std::string out;
-    std::string indenter = buildIndenter(indent);
+Elonef::SignedKey::SignedKey(CryptoPP::ByteQueue& data) {
+    this->key = Elonef::toDynamicSizeString(data);
+    this->signatures = Elonef::toMap<std::string, std::string>(data, toDynamicSizeString_long, toDynamicSizeString_long);
+}
 
-    out = out + indenter + "{\n"
-              + indenter + "\tkey: " + this->key + "\n"
-              + indenter + "\tca_keys: {\n";
-    
-    for (auto key: this->signatures) {
-        out = out + indenter + "\t\t" + key.first + ": " + key.second + "\n";
-    }
+Elonef::SignedKey::SignedKey() {}
 
-    out = out + indenter + "\t}\n"
-              + indenter + "}\n";
-
+CryptoPP::ByteQueue Elonef::SignedKey::toQueue() {
+    CryptoPP::ByteQueue out = Elonef::toBytes(this->key);
+    Elonef::toBytes(signatures.begin(), signatures.end()).TransferAllTo(out);
     return out;
 }
 
-std::string Elonef::PublicClientKey::print(size_t indent) {
-    std::string out;
-    std::string indenter = buildIndenter(indent);
-    out = out + indenter + "{\n"
-              + indenter + "\tdata_key:\n"
-              + this->data_key.print(indent + 1)
-              + indenter + "\tsign_key:\n"
-              + this->sign_key.print(indent+1)
-              + indenter + "\tuid: " + this->id + "\n"
-              + indenter + "}\n";
+Elonef::PublicClientKey::PublicClientKey(CryptoPP::ByteQueue& data) {
+    this->id = Elonef::toDynamicSizeString(data);
+    this->data_key = Elonef::SignedKey(data);
+    this->sign_key = Elonef::SignedKey(data);
+}
 
+Elonef::PublicClientKey::PublicClientKey() {}
 
+CryptoPP::ByteQueue Elonef::PublicClientKey::toQueue() {
+    CryptoPP::ByteQueue out = Elonef::toBytes(this->id);
+    this->data_key.toQueue().TransferAllTo(out);
+    this->sign_key.toQueue().TransferAllTo(out);
+    return out;
+}
+
+Elonef::PrivateClientKey::PrivateClientKey(CryptoPP::ByteQueue& data) {
+    this->sign_key = Elonef::toDynamicSizeString(data);
+    this->data_key = Elonef::toDynamicSizeString(data);
+    this->server_key = Elonef::toDynamicSizeString(data);
+    this->ca_keys = Elonef::toMap<std::string, std::string>(data, toDynamicSizeString_long, toDynamicSizeString_long);
+    this->uid = Elonef::toDynamicSizeString(data);
+}
+
+Elonef::PrivateClientKey::PrivateClientKey() {}
+
+CryptoPP::ByteQueue Elonef::PrivateClientKey::toQueue() {
+    CryptoPP::ByteQueue out = Elonef::toBytes(this->sign_key);
+    Elonef::toBytes(data_key).TransferAllTo(out);
+    Elonef::toBytes(server_key).TransferAllTo(out);
+    Elonef::toBytes(ca_keys.begin(), ca_keys.end()).TransferAllTo(out);
+    Elonef::toBytes(uid).TransferAllTo(out);   
     return out;
 }
 
