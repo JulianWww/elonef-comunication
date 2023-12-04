@@ -15,15 +15,15 @@ CryptoPP::ByteQueue chat_key;
 CryptoPP::ByteQueue chat_key_id;
 std::vector<CryptoPP::ByteQueue> messages;
 
-const Elonef::PublicClientKey* get_public_key(const std::string& id, const std::string& userid) {
+Elonef::PublicClientKey* get_public_key(const std::string& id, const std::string& userid) {
     return &keys->public_key;
 }
 
-const CryptoPP::ByteQueue* get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& key, const std::string& userid) {
+CryptoPP::ByteQueue* get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& key, const std::string& userid) {
     return &chat_key;
 }
 
-const std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*> get_newest_chat_key(const std::string& key, const std::string& userid) {
+std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*> get_newest_chat_key(const std::string& key, const std::string& userid) {
     return {&chat_key, &chat_key_id};
 }
 

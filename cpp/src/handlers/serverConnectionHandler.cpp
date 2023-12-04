@@ -12,9 +12,9 @@
 #include <iostream>
 
 Elonef::ServerConnectionHandler::ServerConnectionHandler(std::string ip, uint16_t port, const SlidingTimeWindow window,
-            std::function<const PublicClientKey*(const std::string& id, const std::string& userid)> get_public_key,
-            std::function<const CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> get_chat_key,
-            std::function<const std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*>(const std::string& chat_id, const std::string& userid)> newest_chat_key_fetcher,
+            std::function<PublicClientKey*(const std::string& id, const std::string& userid)> get_public_key,
+            std::function<CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> get_chat_key,
+            std::function<std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*>(const std::string& chat_id, const std::string& userid)> newest_chat_key_fetcher,
             std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter,
             std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter,
             std::function<VectorRange(const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher
@@ -120,40 +120,41 @@ void Elonef::ServerConnectionHandler::make_api_request(const std::string& call_i
     }
 }
 
-const Elonef::SignedKey* Elonef::ServerConnectionHandler::get_signed_key_for_user(ServerConnectionHandler* _this, const std::string& uid, const std::string& requester) {
-    const PublicClientKey* key = _this->get_public_key(uid, requester);
+std::pair<Elonef::PublicClientKey* , Elonef::SignedKey*> Elonef::ServerConnectionHandler::get_signed_key_for_user(ServerConnectionHandler* _this, const std::string& uid, const std::string& requester) {
+    PublicClientKey* key = _this->get_public_key(uid, requester);
     if (key == nullptr) {
-        return nullptr;
+        return {nullptr, nullptr};
     }
-    return &key->sign_key;
+    return std::make_pair(key, &key->sign_key);
 }
 
-const Elonef::SignedKey* Elonef::ServerConnectionHandler::get_data_key_for_user(ServerConnectionHandler* _this, const std::string& uid, const std::string& requester) {
-    const PublicClientKey* key = _this->get_public_key(uid, requester);
+std::pair<Elonef::PublicClientKey* ,Elonef::SignedKey*> Elonef::ServerConnectionHandler::get_data_key_for_user(ServerConnectionHandler* _this, const std::string& uid, const std::string& requester) {
+    PublicClientKey* key = _this->get_public_key(uid, requester);
     if (key == nullptr) {
-        return nullptr;
+        return {nullptr, nullptr};
     }
-    return &key->data_key;
+    return {key, &key->data_key};
 }
 
-const CryptoPP::ByteQueue* Elonef::ServerConnectionHandler::get_chat_key_for_user(ServerConnectionHandler* _this, const std::pair<std::string, CryptoPP::ByteQueue>& key_id, const std::string& requester) {
-    return _this->chat_key_fetcher(key_id, requester);
+std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*> Elonef::ServerConnectionHandler::get_chat_key_for_user(ServerConnectionHandler* _this, const std::pair<std::string, CryptoPP::ByteQueue>& key_id, const std::string& requester) {
+    CryptoPP::ByteQueue* queue = _this->chat_key_fetcher(key_id, requester);
+    return {queue, queue};
 }
 
 CryptoPP::ByteQueue Elonef::ServerConnectionHandler::get_data_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData) {
     std::vector<std::string> keys = toIterable<std::vector<std::string>, std::string>(queue, &toDynamicSizeString, make_vector);
-    return this->buid_cache_request_return<std::string, SignedKey>(keys, connData, &get_data_key_for_user, &signedKeyToBytes);
+    return this->buid_cache_request_return<std::string, SignedKey, PublicClientKey>(keys, connData, &get_data_key_for_user, &signedKeyToBytes);
 }
 
 CryptoPP::ByteQueue Elonef::ServerConnectionHandler::get_signature_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData) {
     std::vector<std::string> keys = toIterable<std::vector<std::string>, std::string>(queue, &toDynamicSizeString, make_vector);
-    return this->buid_cache_request_return<std::string, SignedKey>(keys, connData, &get_signed_key_for_user, &signedKeyToBytes);
+    return this->buid_cache_request_return<std::string, SignedKey, PublicClientKey>(keys, connData, &get_signed_key_for_user, &signedKeyToBytes);
 }
 
 CryptoPP::ByteQueue Elonef::ServerConnectionHandler::get_chat_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData) {
     std::vector<std::pair<std::string, CryptoPP::ByteQueue>> keys = toIterable<std::vector<std::pair<std::string, CryptoPP::ByteQueue>>, std::pair<std::string, CryptoPP::ByteQueue>>
         (queue, &toStringQueuePair, &make_vector);
-    return this->buid_cache_request_return<std::pair<std::string, CryptoPP::ByteQueue>, CryptoPP::ByteQueue>(keys, connData, &get_chat_key_for_user, &toBytes_static_size);
+    return this->buid_cache_request_return<std::pair<std::string, CryptoPP::ByteQueue>, CryptoPP::ByteQueue, CryptoPP::ByteQueue>(keys, connData, &get_chat_key_for_user, &toBytes_static_size);
 }
 
 CryptoPP::ByteQueue Elonef::ServerConnectionHandler::get_newest_chat_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData) {
@@ -163,7 +164,10 @@ CryptoPP::ByteQueue Elonef::ServerConnectionHandler::get_newest_chat_key(CryptoP
         return CryptoPP::ByteQueue();
     }
     
-    return toBytes(key_and_uuid);
+    CryptoPP::ByteQueue out = toBytes(key_and_uuid);
+    delete key_and_uuid.first;
+    delete key_and_uuid.second;
+    return out;
 }
 
 void Elonef::ServerConnectionHandler::set_chat_key(CryptoPP::ByteQueue& queue, const ServerConnectionData& connData) {
