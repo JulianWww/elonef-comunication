@@ -5,50 +5,50 @@ set(USE_TLS TRUE)
 
 find_package(Git REQUIRED)
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/cryptopp-cmake")
+if (NOT EXISTS "cryptopp-cmake")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/abdes/cryptopp-cmake.git
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "./"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/cryptopp-pem-cmake")
+if (NOT EXISTS "cryptopp-pem-cmake")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/cryptopp-pem-cmake
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "./"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/uuid_v4")
+if (NOT EXISTS "uuid_v4")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/crashoz/uuid_v4
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "./"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/BinarySearchTree")
+if (NOT EXISTS "BinarySearchTree")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/BinarySearchTree
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "./"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/json")
+if (NOT EXISTS "json")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/nlohmann/json
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "./"
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/IXWebSocket")
+if (NOT EXISTS "IXWebSocket")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" clone https://github.com/JulianWww/IXWebSocket
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        WORKING_DIRECTORY "./"
     )
 else()
 execute_process(
     COMMAND "${GIT_EXECUTABLE}" pull https://github.com/JulianWww/IXWebSocket
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/IXWebSocket"
+    WORKING_DIRECTORY "IXWebSocket"
 )
 endif()
 
