@@ -13,7 +13,7 @@ std::unordered_map<std::string, std::string> ca_keys;
 Elonef::ClientKeys* keys;
 CryptoPP::ByteQueue chat_key;
 CryptoPP::ByteQueue chat_key_id;
-std::vector<CryptoPP::ByteQueue> messages;
+std::list<CryptoPP::ByteQueue> messages;
 
 Elonef::PublicClientKey* get_public_key(const std::string& id, const std::string& userid) {
     return &keys->public_key;
@@ -36,7 +36,7 @@ void add_message(const std::string& chat_id, const CryptoPP::ByteQueue& message)
     messages.push_back(message);
 }
 
-std::vector<CryptoPP::ByteQueue> get_messages(const std::string& chat_id, const size_t& idx, const size_t& size) {
+std::list<CryptoPP::ByteQueue> get_messages(const std::string& chat_id, const size_t& idx, const size_t& size) {
     return messages;
 }
 
