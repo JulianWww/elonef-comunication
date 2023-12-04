@@ -36,8 +36,8 @@ void add_message(const std::string& chat_id, const CryptoPP::ByteQueue& message)
     messages.push_back(message);
 }
 
-std::pair<std::vector<CryptoPP::ByteQueue>::iterator, std::vector<CryptoPP::ByteQueue>::iterator> get_messages(const std::string& chat_id, const size_t& idx, const size_t& size) {
-    return {messages.begin(), messages.end()};
+std::vector<CryptoPP::ByteQueue> get_messages(const std::string& chat_id, const size_t& idx, const size_t& size) {
+    return messages;
 }
 
 CryptoPP::ByteQueue test_api(CryptoPP::ByteQueue& queue, Elonef::ServerConnectionData& connData) {

@@ -197,7 +197,7 @@ CryptoPP::ByteQueue Elonef::ServerConnectionHandler::read_message(CryptoPP::Byte
     size_t first_msg_idx = Elonef::toSize_T(queue);
     size_t msg_count = Elonef::toSize_T(queue);
     VectorRange range = this->message_fetcher(chat_id, first_msg_idx, msg_count);
-    return Elonef::toBytes(range.first, range.second);
+    return Elonef::toBytes(range.begin(), range.end());
 }
 
 
