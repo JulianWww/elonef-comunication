@@ -24,6 +24,9 @@ namespace Elonef
     class MessageHandler {
         private: typedef std::function<CryptoPP::ByteQueue(CryptoPP::ByteQueue& content, ConnData& connData)> ApiCallbackFunc;
 
+        private: bool cleaning;
+        private: std::mutex cleaning_mu;
+
         private: T* _this;
         private: std::mutex uuid_map_mu;
         private: std::list<std::future<void>> running_handlers;
@@ -112,6 +115,7 @@ inline void Elonef::MessageHandler<T, ConnData>::handle_message(ix::WebSocket& w
 template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::_handle_message_s(MessageHandler* _this, ix::WebSocket* ws, const std::string& data, ConnData* connData){
     _this->_handle_message_switch(*ws, data, *connData);
+    _this->clean_executors();
 }
 
 
@@ -248,9 +252,14 @@ inline void Elonef::MessageHandler<T, ConnData>::send(ix::WebSocket& conn, const
 
 template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::clean_executors() {
+    if (this->cleaning_mu.try_lock()) {
+        return;
+    }
+    this->cleaning_mu.lock();
     this->running_handlers.remove_if(
         &check_if_future_is_ready<void>
     );
+    this->cleaning_mu.unlock();
 }
 
 template<typename T, typename ConnData>
