@@ -26,6 +26,7 @@ namespace Elonef
         private: typedef std::function<CryptoPP::ByteQueue(CryptoPP::ByteQueue& content, ConnData& connData)> ApiCallbackFunc;
 
         private: std::mutex cleaning_mu;
+        private: bool send_ready = false;
 
         private: T* _this;
         private: std::mutex uuid_map_mu;
@@ -94,6 +95,7 @@ template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::handle_message(ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {   
     switch (msg->type) {
         case (ix::WebSocketMessageType::Open) : {
+            this->send_ready = true;
             _this->onOpen(webSocket);
             return;
         }
@@ -253,10 +255,8 @@ inline void Elonef::MessageHandler<T, ConnData>::send(ix::WebSocket& conn, const
 
 template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::waitForReady(ix::WebSocket& conn) const {
-    ix::ReadyState readyState = conn.getReadyState();
-    while (readyState == ix::ReadyState::Connecting) {
+    while (!this->send_ready) {
         std::this_thread::yield();
-        readyState = conn.getReadyState();
     }
 }
 
