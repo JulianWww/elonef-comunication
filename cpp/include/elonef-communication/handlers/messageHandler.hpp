@@ -112,7 +112,9 @@ inline void Elonef::MessageHandler<T, ConnData>::handle_message(ix::WebSocket & 
 
 template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::handle_message(ix::WebSocket& ws, const std::string& data, ConnData* connData) {
+    this->cleaning_mu.lock();
     running_handlers.push_back(std::async(_handle_message_s, this, &ws, data, connData));
+    this->cleaning_mu.unlock();
 }
 
 template<typename T, typename ConnData>
@@ -263,10 +265,10 @@ inline void Elonef::MessageHandler<T, ConnData>::waitForReady() const {
 
 template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::clean_executors() {
-    if (this->cleaning_mu.try_lock()) {
+    if (!this->cleaning_mu.try_lock()) {
         return;
     }
-    this->cleaning_mu.lock();
+
     this->running_handlers.remove_if(
         &check_if_future_is_ready<void>
     );
