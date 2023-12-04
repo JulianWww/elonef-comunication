@@ -78,11 +78,11 @@ int main(){{
     std::cout << Elonef::toString(client.make_api_request("test", message, true));
     
     server.make_api_request("tester", message, {"tester"}, [](Elonef::ServerConnectionHandler* handler, ix::WebSocket* sock, CryptoPP::ByteQueue& data){});
-    // test_aes();
-    // test_ecdsa();
-    // test_encoding();
-    // test_error();
-    // test_rsa();
+    test_aes();
+    test_ecdsa();
+    test_encoding();
+    test_error();
+    test_rsa();
     sleep(1);
 }
     return summarize_tests();
