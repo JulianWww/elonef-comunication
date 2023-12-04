@@ -54,7 +54,7 @@ namespace Elonef
         public: void send(ix::WebSocket& conn, CryptoPP::byte msg_type);
         public: void send(ix::WebSocket& conn, CryptoPP::ByteQueue& uuid, CryptoPP::ByteQueue& data, CryptoPP::byte msg_type);
         private: void send(ix::WebSocket& conn, const std::string& queue);
-        private: void waitForReady(ix::WebSocket& conn) const;
+        private: void waitForReady() const;
 
         protected: void clean_executors();
 
@@ -250,11 +250,12 @@ inline void Elonef::MessageHandler<T, ConnData>::send(ix::WebSocket& conn, Crypt
 
 template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::send(ix::WebSocket& conn, const std::string& data) {
+    this->waitForReady();
     conn.sendBinary(data);
 }
 
 template<typename T, typename ConnData>
-inline void Elonef::MessageHandler<T, ConnData>::waitForReady(ix::WebSocket& conn) const {
+inline void Elonef::MessageHandler<T, ConnData>::waitForReady() const {
     while (!this->send_ready) {
         std::this_thread::yield();
     }
