@@ -27,16 +27,16 @@ std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*> get_newest_chat_key(const 
     return {&chat_key, &chat_key_id};
 }
 
-void set_chat_key(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys) {
+void set_chat_key(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys) {
     //std::cout << keys << std::endl;
     //std::cout << chat_key << std::endl;
 }
 
-void add_message(const std::string& chat_id, const CryptoPP::ByteQueue& message) {
+void add_message(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& message) {
     messages.push_back(message);
 }
 
-std::list<CryptoPP::ByteQueue> get_messages(const std::string& chat_id, const size_t& idx, const size_t& size) {
+std::list<CryptoPP::ByteQueue> get_messages(const std::string& userid, const std::string& chat_id, const size_t& idx, const size_t& size) {
     return messages;
 }
 

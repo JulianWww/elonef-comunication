@@ -15,9 +15,9 @@ Elonef::ServerConnectionHandler::ServerConnectionHandler(std::string ip, uint16_
             std::function<PublicClientKey*(const std::string& id, const std::string& userid)> get_public_key,
             std::function<CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> get_chat_key,
             std::function<std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*>(const std::string& chat_id, const std::string& userid)> newest_chat_key_fetcher,
-            std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter,
-            std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter,
-            std::function<VectorRange(const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher
+            std::function<void(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter,
+            std::function<void(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter,
+            std::function<VectorRange(const std::string& userid, const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher
         ): MessageHandler(this), sendTimeUploadWindow(window), ix::WebSocketServer(ix::customData<ServerConnectionData>(), port, ip) {
     this->get_public_key = get_public_key;
     this->chat_key_fetcher = get_chat_key;
@@ -175,7 +175,7 @@ void Elonef::ServerConnectionHandler::set_chat_key(CryptoPP::ByteQueue& queue, c
         (queue, toStringQueuePair, make_vector);
     std::string chat_id = toDynamicSizeString(queue);
     auto _uuid = uuid();
-    this->chat_key_setter(chat_id, _uuid, keys);
+    this->chat_key_setter(connData.uid, chat_id, _uuid, keys);
 }
 
 void Elonef::ServerConnectionHandler::add_message(CryptoPP::ByteQueue& client_message, const ServerConnectionData& connData) {
@@ -188,7 +188,7 @@ void Elonef::ServerConnectionHandler::add_message(CryptoPP::ByteQueue& client_me
     toBytes(get_current_time()).TransferAllTo(message);
     message.Put(0x00);
 
-    this->message_setter(connData.uid, message);
+    this->message_setter(connData.uid, chat_id, message);
 
 }
 
@@ -196,7 +196,7 @@ CryptoPP::ByteQueue Elonef::ServerConnectionHandler::read_message(CryptoPP::Byte
     std::string chat_id = Elonef::toDynamicSizeString(queue);
     size_t first_msg_idx = Elonef::toSize_T(queue);
     size_t msg_count = Elonef::toSize_T(queue);
-    VectorRange range = this->message_fetcher(chat_id, first_msg_idx, msg_count);
+    VectorRange range = this->message_fetcher(connData.uid, chat_id, first_msg_idx, msg_count);
     return Elonef::toBytes(range.begin(), range.end());
 }
 

@@ -24,9 +24,9 @@ namespace Elonef {
         private: std::function<CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> chat_key_fetcher;
 
         private: std::function<std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*>(const std::string& chat_id, const std::string& userid)> newest_chat_key_fetcher;
-        private: std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter;
-        private: std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter;
-        private: std::function<VectorRange(const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher;
+        private: std::function<void(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter;
+        private: std::function<void(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter;
+        private: std::function<VectorRange(const std::string& userid, const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher;
         
         private: SlidingTimeWindow sendTimeUploadWindow;
 
@@ -34,9 +34,9 @@ namespace Elonef {
             std::function<PublicClientKey*(const std::string& id, const std::string& userid)> get_public_key,
             std::function<CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> get_chat_key,
             std::function<std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*>(const std::string& chat_id, const std::string& userid)> newest_chat_key_fetcher,
-            std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter,
-            std::function<void(const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter,
-            std::function<VectorRange(const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher
+            std::function<void(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys)> chat_key_setter,
+            std::function<void(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& message)> message_setter,
+            std::function<VectorRange(const std::string& userid, const std::string& chat_id, const size_t& msg_idx, const size_t& count)> message_fetcher
         );
         
 
