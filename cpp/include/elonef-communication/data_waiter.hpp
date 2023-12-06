@@ -2,6 +2,7 @@
 
 #include <future>
 #include <mutex>
+#include "print.hpp"
 
 namespace Elonef {
     template<typename T>
@@ -75,8 +76,12 @@ inline void Elonef::DataWaiter<T>::set_value() {
 
 template<typename T>
 inline void Elonef::DataWaiter<T>::reject(std::string reason) {
-    std::runtime_error* err = new std::runtime_error(reason);
-    this->reject(err);
+    try {
+        throw new std::runtime_error(reason);
+    }
+    catch(...) {
+        this->reject(std::current_exception());
+    }
 }
 
 template<typename T>

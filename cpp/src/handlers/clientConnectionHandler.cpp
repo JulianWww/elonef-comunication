@@ -87,12 +87,12 @@ void Elonef::ClientConnectionHandler::wait_for_auth() {
     this->ready.wait();
 }
 
-void Elonef::ClientConnectionHandler::load_data_keys(const std::vector<std::string>& keys) {
+void Elonef::ClientConnectionHandler::load_data_keys(const std::unordered_set<std::string>& keys) {
     this->wait_for_auth();
     this->data_key_cache.ensure_presance<ClientConnectionHandler>(keys, this->client, this, toRsaPublicVector);
 }
 
-void Elonef::ClientConnectionHandler::load_signature_keys(const std::vector<std::string>& keys) {
+void Elonef::ClientConnectionHandler::load_signature_keys(const std::unordered_set<std::string>& keys) {
     this->wait_for_auth();
     this->signed_key_cache.ensure_presance<ClientConnectionHandler>(keys, this->client, this, toECDSAPublicVector);
 }
@@ -102,10 +102,10 @@ void Elonef::ClientConnectionHandler::load_chat_keys(const std::string& chat_key
 }
 
 void Elonef::ClientConnectionHandler::load_chat_keys(const std::pair<std::string, CryptoPP::ByteQueue>& key_id) {
-    this->load_chat_keys((std::vector<std::pair<std::string, CryptoPP::ByteQueue>>){key_id});
+    this->load_chat_keys((std::unordered_set<std::pair<std::string, CryptoPP::ByteQueue>>){key_id});
 }
 
-void Elonef::ClientConnectionHandler::load_chat_keys(const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& key_ids){
+void Elonef::ClientConnectionHandler::load_chat_keys(const std::unordered_set<std::pair<std::string, CryptoPP::ByteQueue>>& key_ids){
     this->wait_for_auth();
     this->chat_key_cache.ensure_presance<ClientConnectionHandler>(key_ids, this->client, this, toChatKeyVector);
 }
@@ -124,7 +124,7 @@ std::pair<CryptoPP::ByteQueue, CryptoPP::ByteQueue> Elonef::ClientConnectionHand
     };
 }
 
-void Elonef::ClientConnectionHandler::generate_chat_key(const std::vector<std::string>& users, const std::string& chat_id){
+void Elonef::ClientConnectionHandler::generate_chat_key(const std::unordered_set<std::string>& users, const std::string& chat_id){
     this->wait_for_auth();
     this->load_data_keys(users);
     CryptoPP::SecByteBlock aes_key = randomKey();
@@ -206,16 +206,15 @@ CryptoPP::ByteQueue Elonef::ClientConnectionHandler::decrypt_chat_key(CryptoPP::
 
 template<typename T>
 std::vector<std::pair<std::string, T>> toPublicKeyVecor(CryptoPP::ByteQueue& queue, std::function<T(std::string& key)> load_pub_key) {
-    std::vector<std::pair<std::string, std::string>> keys = Elonef::toIterable<std::vector<std::pair<std::string, std::string>>, std::pair<std::string, std::string>>
-        (queue, Elonef::toStringStringPair, Elonef::make_vector);
+    std::vector<std::pair<std::string, CryptoPP::ByteQueue>> keys = Elonef::toIterable
+        (queue, Elonef::toStringQueuePair, Elonef::make_vector<std::pair<std::string, CryptoPP::ByteQueue>>);
 
     std::vector<std::pair<std::string, T>> out(keys.size());
     for (size_t idx=0; idx<keys.size(); idx++) {
-        nlohmann::json json = nlohmann::json::parse(keys[idx].second);
-        std::string key_data = json["key"];
+        Elonef::SignedKey key = (keys[idx].second);
         out[idx] = {
             keys[idx].first,
-            load_pub_key(key_data)
+            load_pub_key(key.key)
         };
 
     }

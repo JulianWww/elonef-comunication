@@ -4,6 +4,7 @@
 #include <elonef-communication/encryption/aes.hpp>
 #include <elonef-communication/encryption/sign.hpp>
 #include <elonef-communication/utils.hpp>
+#include <elonef-communication/keys/load_keys.hpp>
 #include <chrono>
 
 #define MSG_LOOP(x) for (Elonef::Message& msg : messages) { if (msg.invalid) {continue;} x}
@@ -59,18 +60,17 @@ void extract_server_and_user_data(std::vector<Elonef::Message>& messages) {
 }
 
 void ensure_ecdsa_key_presance(std::vector<Elonef::Message>& messages, Elonef::ClientConnectionHandler& handler) {
-    std::vector<std::string> keys_to_find(messages.size());
-    auto key_iter = keys_to_find.begin();
+    std::unordered_set<std::string> keys_to_find(messages.size());
     for (
-        auto msg_iter = messages.begin(); msg_iter != messages.end(); msg_iter++, key_iter++
+        auto msg_iter = messages.begin(); msg_iter != messages.end(); msg_iter++
     ) {
-        *key_iter = msg_iter->sender_id;
+        keys_to_find.insert(msg_iter->sender_id);
     }
     handler.load_signature_keys(keys_to_find);
 }
 
 void check_signatures(std::vector<Elonef::Message>& messages, Elonef::ClientConnectionHandler& handler) {
-    MSG_LOOP(
+    for (Elonef::Message& msg : messages) { if (msg.invalid) {continue;}
         // check that a fetch is running or has already terminated
         Elonef::DataWaiter<Elonef::ECDSA::PublicKey>* waiter = handler.get_signature_key(msg.sender_id);
         if (waiter == nullptr) {
@@ -88,13 +88,15 @@ void check_signatures(std::vector<Elonef::Message>& messages, Elonef::ClientConn
             continue;
         }
 
+
+        //std::cout << Elonef::toHex(msg.message) << std::endl;
         Elonef::VerificationResult res = Elonef::verify(msg.message, key);
         if (!res.safe) {
             msg.invalid = true;
             continue;
         }
         res.data.TransferAllTo(msg.message);
-    );
+    };
 }
 
 void extract_client_data(std::vector<Elonef::Message>& messages) {
@@ -105,14 +107,13 @@ void extract_client_data(std::vector<Elonef::Message>& messages) {
 }
 
 void ensure_aes_key_presance(std::vector<Elonef::Message>& messages, Elonef::ClientConnectionHandler& handler, const std::string& chat_id) {
-    std::vector<std::pair<std::string, CryptoPP::ByteQueue>> keys_to_find(messages.size());
-    auto key_iter = keys_to_find.begin();
+    std::unordered_set<std::pair<std::string, CryptoPP::ByteQueue>> keys_to_find(messages.size());
     for (
-        auto msg_iter = messages.begin(); msg_iter != messages.end(); msg_iter++, key_iter++
+        auto msg_iter = messages.begin(); msg_iter != messages.end(); msg_iter++
     ) {
         CryptoPP::ByteQueue msg_copy = msg_iter->message;
         CryptoPP::ByteQueue key_id = Elonef::extractConstantLengthQueue(msg_copy, ELONEF_UUID_SIZE);
-        *key_iter = { chat_id, key_id };
+        keys_to_find.insert( { chat_id, key_id } );
     }
     handler.load_chat_keys(keys_to_find);
 }

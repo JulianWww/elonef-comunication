@@ -23,7 +23,7 @@ Elonef::SignedKey::SignedKey(CryptoPP::ByteQueue& data) {
 
 Elonef::SignedKey::SignedKey() {}
 
-CryptoPP::ByteQueue Elonef::SignedKey::toQueue() {
+CryptoPP::ByteQueue Elonef::SignedKey::toQueue() const {
     CryptoPP::ByteQueue out = Elonef::toBytes(this->key);
     Elonef::toBytes(signatures.begin(), signatures.end()).TransferAllTo(out);
     return out;
@@ -37,7 +37,7 @@ Elonef::PublicClientKey::PublicClientKey(CryptoPP::ByteQueue& data) {
 
 Elonef::PublicClientKey::PublicClientKey() {}
 
-CryptoPP::ByteQueue Elonef::PublicClientKey::toQueue() {
+CryptoPP::ByteQueue Elonef::PublicClientKey::toQueue() const {
     CryptoPP::ByteQueue out = Elonef::toBytes(this->id);
     this->data_key.toQueue().TransferAllTo(out);
     this->sign_key.toQueue().TransferAllTo(out);
@@ -54,7 +54,7 @@ Elonef::PrivateClientKey::PrivateClientKey(CryptoPP::ByteQueue& data) {
 
 Elonef::PrivateClientKey::PrivateClientKey() {}
 
-CryptoPP::ByteQueue Elonef::PrivateClientKey::toQueue() {
+CryptoPP::ByteQueue Elonef::PrivateClientKey::toQueue() const {
     CryptoPP::ByteQueue out = Elonef::toBytes(this->sign_key);
     Elonef::toBytes(data_key).TransferAllTo(out);
     Elonef::toBytes(server_key).TransferAllTo(out);

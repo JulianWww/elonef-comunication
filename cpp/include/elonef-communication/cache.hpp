@@ -7,6 +7,7 @@
 #include "handlers/return_handlers/callback_return_handler.hpp"
 #include <ixwebsocket/IXWebSocket.h>
 #include <mutex>
+#include <unordered_set>
 #include "cache_data.hpp"
 #include "data_waiter.hpp"
 
@@ -14,7 +15,7 @@ namespace Elonef {
     template<typename Key, typename T, typename Hash=std::hash<Key>>
     class Cache {
         private: std::mutex mu;
-        private: std::unordered_map<Key, std::unique_ptr<Elonef::DataWaiter<T>>, Hash> cache;
+        private: std::unordered_map<Key, std::shared_ptr<Elonef::DataWaiter<T>>, Hash> cache;
         private: std::function<CryptoPP::ByteQueue(const std::list<Key>& keys)> encoder;
 
         private: const CryptoPP::byte fetcher;
@@ -23,7 +24,7 @@ namespace Elonef {
 
 
         public: template<typename Handler>
-        void ensure_presance(const std::vector<Key>& key, ix::WebSocket& ws, Handler* handler, std::function<std::vector<std::pair<Key, T>>(Handler* handler, CryptoPP::ByteQueue& queue)> decoder);
+        void ensure_presance(const std::unordered_set<Key>& key, ix::WebSocket& ws, Handler* handler, std::function<std::vector<std::pair<Key, T>>(Handler* handler, CryptoPP::ByteQueue& queue)> decoder);
         public: Elonef::DataWaiter<T>* get(const Key& key);
         
         public: template<typename Handler>
@@ -45,7 +46,7 @@ inline Elonef::Cache<Key, T, Hash>::Cache(
 
 template<typename Key, typename T, typename Hash>
 template<typename Handler>
-inline void Elonef::Cache<Key, T, Hash>::ensure_presance(const std::vector<Key>& key, ix::WebSocket& ws, Handler* handler, std::function<std::vector<std::pair<Key, T>>(Handler* handler, CryptoPP::ByteQueue& queue)> decoder) {
+inline void Elonef::Cache<Key, T, Hash>::ensure_presance(const std::unordered_set<Key>& key, ix::WebSocket& ws, Handler* handler, std::function<std::vector<std::pair<Key, T>>(Handler* handler, CryptoPP::ByteQueue& queue)> decoder) {
     std::list<Key> missing;
 
     this->mu.lock();
@@ -69,7 +70,7 @@ inline void Elonef::Cache<Key, T, Hash>::ensure_presance(const std::vector<Key>&
 
 template<typename Key, typename T, typename Hash>
 inline Elonef::DataWaiter<T>* Elonef::Cache<Key, T, Hash>::get(const Key& key) {
-    return this->cache[key].get();;
+    return this->cache[key].get();
 }
 
 template<typename Key, typename T, typename Hash>
@@ -83,9 +84,10 @@ inline void Elonef::Cache<Key, T, Hash>::handle(Cache<Key, T, Hash>* _this, Cach
         data->users.erase(std::find(data->users.begin(), data->users.end(), key.first));
     }
 
-    for (Key& user : data->users) {
+    for (auto iter=data->users.begin(); iter!=data->users.end(); iter++) {
         //_this->cache[user].set_value();
-        _this->cache.erase(user);
+        _this->cache[*iter]->reject("promise not fulfilled");
+        _this->cache.erase(*iter);
     }
     _this->mu.unlock();
 

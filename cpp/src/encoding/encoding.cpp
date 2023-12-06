@@ -47,8 +47,5 @@ CryptoPP::ByteQueue Elonef::stringQueuePairListToBuffer(const std::list<std::pai
 }
 
 CryptoPP::ByteQueue Elonef::signedKeyToBytes(const SignedKey& key) {
-    nlohmann::json out;
-    out["key"] = key.key;
-    out["signatures"] = key.signatures;
-    return toQueue(out.dump());
+    return key.toQueue();
 }

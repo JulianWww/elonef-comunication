@@ -17,7 +17,7 @@ namespace Elonef {
         std::string key;
         std::unordered_map<std::string, std::string> signatures;
 
-        CryptoPP::ByteQueue toQueue();
+        CryptoPP::ByteQueue toQueue() const;
     };
 
     struct PublicClientKey {
@@ -28,7 +28,7 @@ namespace Elonef {
         SignedKey sign_key;
         std::string id;
 
-        CryptoPP::ByteQueue toQueue();
+        CryptoPP::ByteQueue toQueue() const;
     };
 
     struct PrivateClientKey {
@@ -41,7 +41,7 @@ namespace Elonef {
         std::unordered_map<std::string, std::string> ca_keys;
         std::string uid;
 
-        CryptoPP::ByteQueue toQueue();
+        CryptoPP::ByteQueue toQueue() const;
     };
 
     struct ClientKeys {

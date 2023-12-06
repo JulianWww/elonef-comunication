@@ -46,13 +46,13 @@ namespace Elonef {
 
         private: void wait_for_auth();
 
-        public: void load_data_keys(const std::vector<std::string>& keys);
-        public: void load_signature_keys(const std::vector<std::string>& keys);
+        public: void load_data_keys(const std::unordered_set<std::string>& keys);
+        public: void load_signature_keys(const std::unordered_set<std::string>& keys);
         public: void load_chat_keys(const std::string& chat_key, const CryptoPP::ByteQueue& key_id);
         public: void load_chat_keys(const std::pair<std::string, CryptoPP::ByteQueue>& key_id);
-        public: void load_chat_keys(const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& key_ids);
+        public: void load_chat_keys(const std::unordered_set<std::pair<std::string, CryptoPP::ByteQueue>>& key_ids);
         public: std::pair<CryptoPP::ByteQueue, CryptoPP::ByteQueue> get_newest_chat_key(const std::string& str);
-        public: void generate_chat_key(const std::vector<std::string>& users, const std::string& chat_id);
+        public: void generate_chat_key(const std::unordered_set<std::string>& users, const std::string& chat_id);
         public: void send_message(CryptoPP::ByteQueue& message, const CryptoPP::byte message_type, const std::string& chat_id);
         public: std::vector<Elonef::Message> read_messages(const std::string& chat_id, const size_t& msg_id, const size_t& amount_of_messages);
         public: void read_messages(const std::string& chat_id, const size_t& msg_id, const size_t& amount_of_messages, ReturnHandler* handler);

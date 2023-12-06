@@ -16,15 +16,15 @@ CryptoPP::ByteQueue chat_key_id;
 std::list<CryptoPP::ByteQueue> messages;
 
 Elonef::PublicClientKey* get_public_key(const std::string& id, const std::string& userid) {
-    return &keys->public_key;
+    return new Elonef::PublicClientKey(keys->public_key);
 }
 
 CryptoPP::ByteQueue* get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& key, const std::string& userid) {
-    return &chat_key;
+    return new CryptoPP::ByteQueue(chat_key);
 }
 
 std::pair<CryptoPP::ByteQueue*, CryptoPP::ByteQueue*> get_newest_chat_key(const std::string& key, const std::string& userid) {
-    return {&chat_key, &chat_key_id};
+    return { new CryptoPP::ByteQueue(chat_key), new CryptoPP::ByteQueue(chat_key_id) };
 }
 
 void set_chat_key(const std::string& userid, const std::string& chat_id, const CryptoPP::ByteQueue& key_id, const std::vector<std::pair<std::string, CryptoPP::ByteQueue>>& keys) {
@@ -72,12 +72,16 @@ int main(){{
     //std::cout << client.get_newest_chat_key("test Chat") << std::endl;
     //client.generate_chat_key({"test_user", "eris"}, "test_chat");
     CryptoPP::ByteQueue message = Elonef::toQueue("test message");
-    //client.send_message(message, 0x00, "test_chat");
-    //sleep(1);
-    //std::cout << client.read_messages("test_chat", 0, 10) << std::endl;
-    std::cout << Elonef::toString(client.make_api_request("test", message, true));
+    client.send_message(message, 0x00, "test_chat");
+    message = Elonef::toQueue("test message");
+    client.send_message(message, 0x00, "test_chat");
+    message = Elonef::toQueue("test message");
+    client.send_message(message, 0x00, "test_chat");
+    sleep(1);
+    std::cout << client.read_messages("test_chat", 0, 10).size() << std::endl;
+    //std::cout << Elonef::toString(client.make_api_request("test", message, true));
     
-    server.make_api_request("tester", message, {"tester"}, [](Elonef::ServerConnectionHandler* handler, ix::WebSocket* sock, CryptoPP::ByteQueue& data){});
+    //server.make_api_request("tester", message, {"tester"}, [](Elonef::ServerConnectionHandler* handler, ix::WebSocket* sock, CryptoPP::ByteQueue& data){});
     test_aes();
     test_ecdsa();
     test_encoding();

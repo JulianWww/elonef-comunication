@@ -3,6 +3,7 @@
 #include <elonef-communication/types.hpp>
 #include <cryptopp-pem/pem.h>
 #include <cryptopp/osrng.h>
+#include <iostream>
 
 template <typename Key>
 inline Key load_rsa(const std::string& key_str) {
@@ -17,6 +18,7 @@ inline Key load_ecdsa(const std::string& key_str) {
     auto priv_exp = Elonef::fromBase64(key_str);
     Key priv_key;
     priv_key.Load(priv_exp);
+
     return priv_key;
 }
 
