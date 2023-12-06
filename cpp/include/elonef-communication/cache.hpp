@@ -25,7 +25,7 @@ namespace Elonef {
 
         public: template<typename Handler>
         void ensure_presance(const std::unordered_set<Key>& key, ix::WebSocket& ws, Handler* handler, std::function<std::vector<std::pair<Key, T>>(Handler* handler, CryptoPP::ByteQueue& queue)> decoder);
-        public: Elonef::DataWaiter<T>* get(const Key& key);
+        public: std::shared_ptr<Elonef::DataWaiter<T>> get(const Key& key);
         
         public: template<typename Handler>
         static void handle(Cache<Key, T, Hash>* _this, CacheHandlerData<Key, Handler, T>* ptr, CryptoPP::ByteQueue& content);
@@ -69,8 +69,8 @@ inline void Elonef::Cache<Key, T, Hash>::ensure_presance(const std::unordered_se
 }
 
 template<typename Key, typename T, typename Hash>
-inline Elonef::DataWaiter<T>* Elonef::Cache<Key, T, Hash>::get(const Key& key) {
-    return this->cache[key].get();
+inline std::shared_ptr<Elonef::DataWaiter<T>> Elonef::Cache<Key, T, Hash>::get(const Key& key) {
+    return this->cache[key];
 }
 
 template<typename Key, typename T, typename Hash>

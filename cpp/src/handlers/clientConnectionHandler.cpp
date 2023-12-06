@@ -182,16 +182,16 @@ void Elonef::ClientConnectionHandler::make_api_request(const std::string& call_i
 
 
 
-Elonef::DataWaiter<CryptoPP::RSA::PublicKey>* Elonef::ClientConnectionHandler::get_data_key(const std::string& user) {
+std::shared_ptr<Elonef::DataWaiter<CryptoPP::RSA::PublicKey>> Elonef::ClientConnectionHandler::get_data_key(const std::string& user) {
     return this->data_key_cache.get(user);
 };
-Elonef::DataWaiter<Elonef::ECDSA::PublicKey>* Elonef::ClientConnectionHandler::get_signature_key(const std::string& user) {
+std::shared_ptr<Elonef::DataWaiter<Elonef::ECDSA::PublicKey>> Elonef::ClientConnectionHandler::get_signature_key(const std::string& user) {
     return this->signed_key_cache.get(user);
 };
-Elonef::DataWaiter<CryptoPP::ByteQueue>* Elonef::ClientConnectionHandler::get_chat_key(const std::string& chat, const CryptoPP::ByteQueue& key_id) {
+std::shared_ptr<Elonef::DataWaiter<CryptoPP::ByteQueue>> Elonef::ClientConnectionHandler::get_chat_key(const std::string& chat, const CryptoPP::ByteQueue& key_id) {
     return this->get_chat_key({chat, key_id});
 };
-Elonef::DataWaiter<CryptoPP::ByteQueue>* Elonef::ClientConnectionHandler::get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& id) {
+std::shared_ptr<Elonef::DataWaiter<CryptoPP::ByteQueue>> Elonef::ClientConnectionHandler::get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& id) {
     return this->chat_key_cache.get(id);
 }
 

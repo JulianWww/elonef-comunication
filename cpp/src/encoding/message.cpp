@@ -70,9 +70,9 @@ void ensure_ecdsa_key_presance(std::vector<Elonef::Message>& messages, Elonef::C
 }
 
 void check_signatures(std::vector<Elonef::Message>& messages, Elonef::ClientConnectionHandler& handler) {
-    for (Elonef::Message& msg : messages) { if (msg.invalid) {continue;}
+    MSG_LOOP(
         // check that a fetch is running or has already terminated
-        Elonef::DataWaiter<Elonef::ECDSA::PublicKey>* waiter = handler.get_signature_key(msg.sender_id);
+        std::shared_ptr<Elonef::DataWaiter<Elonef::ECDSA::PublicKey>> waiter = handler.get_signature_key(msg.sender_id);
         if (waiter == nullptr) {
             msg.invalid = true;
             continue;
@@ -96,7 +96,7 @@ void check_signatures(std::vector<Elonef::Message>& messages, Elonef::ClientConn
             continue;
         }
         res.data.TransferAllTo(msg.message);
-    };
+    );
 }
 
 void extract_client_data(std::vector<Elonef::Message>& messages) {
@@ -122,7 +122,7 @@ void decrypt_messages(std::vector<Elonef::Message>& messages, Elonef::ClientConn
     MSG_LOOP(
         // check that a fetch is running or has already terminated
         CryptoPP::ByteQueue key_id = Elonef::extractConstantLengthQueue(msg.message, ELONEF_UUID_SIZE);
-        Elonef::DataWaiter<CryptoPP::ByteQueue>* waiter = handler.get_chat_key(chat_id, key_id);
+        std::shared_ptr<Elonef::DataWaiter<CryptoPP::ByteQueue>> waiter = handler.get_chat_key(chat_id, key_id);
         if (waiter == nullptr) {
             msg.invalid = true;
             continue;

@@ -61,10 +61,10 @@ namespace Elonef {
         public: void make_api_request(const std::string& call_id, CryptoPP::ByteQueue& data, const bool& wait_for_auth, ReturnHandler* handler);
 
 
-        public: Elonef::DataWaiter<CryptoPP::RSA::PublicKey>* get_data_key(const std::string& user);
-        public: Elonef::DataWaiter<Elonef::ECDSA::PublicKey>* get_signature_key(const std::string& user);
-        public: Elonef::DataWaiter<CryptoPP::ByteQueue>* get_chat_key(const std::string&, const CryptoPP::ByteQueue& key_id);
-        public: Elonef::DataWaiter<CryptoPP::ByteQueue>* get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& id);
+        public: std::shared_ptr<Elonef::DataWaiter<CryptoPP::RSA::PublicKey>> get_data_key(const std::string& user);
+        public: std::shared_ptr<Elonef::DataWaiter<Elonef::ECDSA::PublicKey>> get_signature_key(const std::string& user);
+        public: std::shared_ptr<Elonef::DataWaiter<CryptoPP::ByteQueue>> get_chat_key(const std::string&, const CryptoPP::ByteQueue& key_id);
+        public: std::shared_ptr<Elonef::DataWaiter<CryptoPP::ByteQueue>> get_chat_key(const std::pair<std::string, CryptoPP::ByteQueue>& id);
 
 
         public: std::vector<Message> decode_message(CryptoPP::ByteQueue& queue, const std::string& chat_id);
