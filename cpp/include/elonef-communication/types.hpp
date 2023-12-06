@@ -16,7 +16,8 @@ namespace Elonef {
         CryptoPP::byte type;
         size_t send_time;
         size_t upload_time;
-
+        size_t msg_id;
+        
         // set to true if one of the decoding steps failes
         bool invalid = false;
     };

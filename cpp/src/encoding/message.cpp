@@ -43,6 +43,7 @@ CryptoPP::ByteQueue Elonef::encode_message(
 
 Elonef::Message get_base_message(CryptoPP::ByteQueue& queue) {
     Elonef::Message msg;
+    msg.msg_id = Elonef::toSize_T(queue);
     Elonef::extractDynamicLengthQueue(queue).TransferAllTo(msg.message);
     return msg;
 }

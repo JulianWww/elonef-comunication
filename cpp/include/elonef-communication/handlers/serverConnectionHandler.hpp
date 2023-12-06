@@ -18,7 +18,7 @@ namespace Elonef {
     class ServerConnectionHandler : public MessageHandler<ServerConnectionHandler, ServerConnectionData>, public ix::WebSocketServer {
         friend MessageHandler<ServerConnectionHandler, ServerConnectionData>;
 
-        public: typedef std::list<CryptoPP::ByteQueue> VectorRange;
+        public: typedef std::list<std::pair<size_t, CryptoPP::ByteQueue>> VectorRange;
     
         private: std::function<PublicClientKey*(const std::string& id, const std::string& userid)> get_public_key;
         private: std::function<CryptoPP::ByteQueue*(const std::pair<std::string, CryptoPP::ByteQueue>& chat_key_id, const std::string& userid)> chat_key_fetcher;
