@@ -54,7 +54,11 @@ void Elonef::ServerConnectionHandler::auth(Elonef::ServerConnectionHandler* _thi
     ServerConnectionData* user_data = conn->getCustomData<ServerConnectionData>();
     user_data->authenticated = false;
     std::string uid = Elonef::toDynamicSizeString(queue);
-    Elonef::ECDSA::PublicKey key = Elonef::load_public_ecdsa(_this->get_public_key(uid, uid)->sign_key.key);
+    std::unique_ptr<PublicClientKey> key_ptr(_this->get_public_key(uid, uid));
+    if (key_ptr.get() == nullptr) {
+        return;
+    }
+    Elonef::ECDSA::PublicKey key = Elonef::load_public_ecdsa(key_ptr->sign_key.key);
     user_data->authenticated = Elonef::verify_nonstreamable(user_data->auth_data, queue, key);
     if (user_data->authenticated) {
         user_data->uid = uid;
