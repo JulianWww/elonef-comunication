@@ -8,6 +8,8 @@ namespace Elonef {
     class DataWaiter {
         protected: std::promise<T> promise;
         private: std::mutex mu;
+        private: T data;
+        private: bool resolved=false;
         public: std::future<T> future;
 
         public: DataWaiter();
@@ -29,7 +31,13 @@ inline Elonef::DataWaiter<T>::DataWaiter() : promise(), future(promise.get_futur
 
 template<typename T>
 inline T Elonef::DataWaiter<T>::get() {
-    return this->future.get();
+    this->mu.lock();
+    if (!this->resolved) {
+        this->data = this->future.get();
+        this->resolved = true;
+    }
+    this->mu.unlock();
+    return this->data;
 }
 
 template<typename T>
