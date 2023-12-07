@@ -6,6 +6,8 @@
 #include <cryptopp/osrng.h>
 #include <cryptopp/base64.h>
 
+int val =0;
+
 CryptoPP::AutoSeededRandomPool Elonef::rng;
 
 std::string Elonef::toHex(const CryptoPP::ByteQueue& bytes)

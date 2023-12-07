@@ -6,7 +6,6 @@
 #include <future>
 #include <cryptopp/secblock.h>
 #include <chrono>
-#include <bst/linked_tree.hpp>
 #include <bits/stdint-uintn.h>
 #include "return_handlers/return_handler.hpp"
 #include "../utils.hpp"
@@ -32,7 +31,6 @@ namespace Elonef
         private: T* _this;
         private: std::mutex uuid_map_mu;
         private: std::list<std::future<void>> running_handlers;
-        public: BST::LinkedTree<ReturnHandler> return_uid_map;
         public: std::unordered_map<std::string, std::pair<bool, ApiCallbackFunc>> handler_map;
 
         public: MessageHandler(T* _this);
@@ -179,16 +177,16 @@ template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::handle_return(ix::WebSocket& ws, CryptoPP::ByteQueue& uuid_queue, CryptoPP::ByteQueue& content, ConnData& connData) {
     const CryptoPP::SecByteBlock uid = Elonef::toSecBlock(uuid_queue);
     
-    this->uuid_map_mu.lock();
-    ReturnHandler* func = this->return_uid_map.getAndRelease((char*) uid.data(), 128);
+    connData.uuid_map_mu.lock();
+    ReturnHandler* func = connData.return_uid_map.getAndRelease((char*) uid.data(), 128);
 
     if (func == nullptr) {
-        this->uuid_map_mu.unlock();
+        connData.uuid_map_mu.unlock();
         return;
     }
 
-    this->return_uid_map.remove((char*) uid.data(), 128);
-    this->uuid_map_mu.unlock();
+    connData.return_uid_map.remove((char*) uid.data(), 128);
+    connData.uuid_map_mu.unlock();
     CryptoPP::byte return_code = extreactByte(content);
 
     switch (return_code) {
@@ -234,9 +232,10 @@ inline void Elonef::MessageHandler<T, ConnData>::send(ix::WebSocket& conn, Crypt
     CryptoPP::SecByteBlock data = Elonef::toSecBlock(uuid_backup);
     this->send(conn, uuid, queue, msg_type);
 
-    this->uuid_map_mu.lock();
-    this->return_uid_map.insert((char*)data.data(), 128, handler);
-    this->uuid_map_mu.unlock();
+    ConnData* connData = conn.getCustomData<ConnData>();
+    connData->uuid_map_mu.lock();
+    connData->return_uid_map.insert((char*)data.data(), 128, handler);
+    connData->uuid_map_mu.unlock();
 }
 
 template<typename T, typename ConnData>

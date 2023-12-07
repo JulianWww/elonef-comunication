@@ -14,6 +14,9 @@ namespace Elonef {
         public: std::future<T> future;
 
         public: DataWaiter();
+        public: inline ~DataWaiter(){
+            // std::cout << "del: " << this << std::endl;
+        }
         
         public: T get();
         public: void wait();
@@ -27,8 +30,12 @@ namespace Elonef {
     };
 }
 
+extern int val;
+
 template<typename T>
-inline Elonef::DataWaiter<T>::DataWaiter() : promise(), future(promise.get_future()) {}
+inline Elonef::DataWaiter<T>::DataWaiter() : promise(), future(promise.get_future()) { 
+    //std::cout << "mke: " << this << " " << ++val << std::endl; if (val==3){throw std::runtime_error("data leak");}
+}
 
 template<typename T>
 inline T Elonef::DataWaiter<T>::get() {

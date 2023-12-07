@@ -7,36 +7,41 @@ namespace Elonef {
     template<typename T, typename WS>
     class CallbackReturnHandler : public ReturnHandler {
         private: std::function<void(T*, WS*, CryptoPP::ByteQueue&)> callback;
-        private: std::function<void(T*, WS*)> deleter;
         private: T* _handler;
         private: WS* connection;
+        private: bool delHandler;
+        private: bool delconn;
 
         public: CallbackReturnHandler(std::function<void(T*, WS*, CryptoPP::ByteQueue&)> callback, T* handler, WS* conn);
-        public: CallbackReturnHandler(std::function<void(T*, WS*, CryptoPP::ByteQueue&)> callback, T* handler, WS* conn, std::function<void(T* handler, WS* connection)> deleter);
-        public: ~CallbackReturnHandler();
+        public: CallbackReturnHandler(std::function<void(T*, WS*, CryptoPP::ByteQueue&)> callback, T* handler, WS* conn, bool delHandler, bool delconn);
+        public: virtual ~CallbackReturnHandler();
 
         public: virtual void handle(CryptoPP::ByteQueue& content);
         public: virtual void reject(std::__exception_ptr::exception_ptr error);
-
-        private: static void defaultDeleter(T* handler, WS* connection);
     };
 }
 
 template<typename T, typename WS>
-inline Elonef::CallbackReturnHandler<T, WS>::CallbackReturnHandler(std::function<void(T*, WS*, CryptoPP::ByteQueue&)> callback, T* handler, WS* conn) : CallbackReturnHandler(callback, handler, conn, defaultDeleter) {
-}
+inline Elonef::CallbackReturnHandler<T, WS>::CallbackReturnHandler(std::function<void(T*, WS*, CryptoPP::ByteQueue&)> callback, T* handler, WS* conn) : CallbackReturnHandler(callback, handler, conn, false, false) {}
 
 template<typename T, typename WS>
-inline Elonef::CallbackReturnHandler<T, WS>::CallbackReturnHandler(std::function<void(T*, WS*, CryptoPP::ByteQueue&)> callback, T* handler, WS* conn, std::function<void(T* handler, WS* connection)> deleter) {
+inline Elonef::CallbackReturnHandler<T, WS>::CallbackReturnHandler(std::function<void(T*, WS*, CryptoPP::ByteQueue&)> callback, T* handler, WS* conn, bool delHandler, bool delconn) {
     this->callback = callback;
-    this->deleter = deleter;
     this->_handler = handler;
     this->connection = conn;
+    this->delHandler = delHandler;
+    this->delconn = delconn;
 }
 
 template<typename T, typename WS>
 Elonef::CallbackReturnHandler<T, WS>::~CallbackReturnHandler() {
-    this->deleter(this->_handler, this->connection);
+    if (this->delHandler) {
+        delete this->_handler;
+    }
+    if (this->delconn) {
+        delete this->connection;
+    }
+
 }
 
 template<typename T, typename WS>
@@ -47,8 +52,4 @@ inline void Elonef::CallbackReturnHandler<T, WS>::handle(CryptoPP::ByteQueue& co
 template<typename T, typename WS>
 inline void Elonef::CallbackReturnHandler<T, WS>:: reject(std::__exception_ptr::exception_ptr error) {
     // TODO
-}
-
-template<typename T, typename WS>
-inline void Elonef::CallbackReturnHandler<T, WS>::defaultDeleter(T* handler, WS* connection) {
 }

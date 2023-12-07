@@ -31,10 +31,6 @@ namespace Elonef {
         static void handle(Cache<Key, T, Hash>* _this, CacheHandlerData<Key, Handler, T>* ptr, CryptoPP::ByteQueue& content);
 
         public: std::string print();
-
-
-        private: template<typename Handler>
-        static void deleter(Cache<Key, T, Hash>* cache, CacheHandlerData<Key, Handler, T>* data);
     };
 }
 
@@ -65,7 +61,7 @@ inline void Elonef::Cache<Key, T, Hash>::ensure_presance(const std::unordered_se
 
     CacheHandlerData<Key, Handler, T>* data = new CacheHandlerData<Key, Handler, T>(key, handler, decoder);
     handler->send(ws, queue, this->fetcher, 
-        new CallbackReturnHandler<Cache<Key, T, Hash>, CacheHandlerData<Key, Handler, T>> (&Cache<Key, T, Hash>::handle<Handler>, this, data, &Cache<Key, T, Hash>::deleter<Handler>));
+        new CallbackReturnHandler<Cache<Key, T, Hash>, CacheHandlerData<Key, Handler, T>> (Cache<Key, T, Hash>::handle<Handler>, this, data, false, true));
 }
 
 template<typename Key, typename T, typename Hash>
@@ -90,8 +86,6 @@ inline void Elonef::Cache<Key, T, Hash>::handle(Cache<Key, T, Hash>* _this, Cach
         _this->cache.erase(*iter);
     }
     _this->mu.unlock();
-
-    delete data;
 }
 
 template<typename Key, typename T, typename Hash>
@@ -108,11 +102,4 @@ std::string Elonef::Cache<Key, T, Hash>::print() {
         out = out + "\n";
     }
     return out;
-}
-
-
-template<typename Key, typename T, typename Hash>
-template<typename Handler>
-void Elonef::Cache<Key, T, Hash>::deleter(Cache<Key, T, Hash>* cache, CacheHandlerData<Key, Handler, T>* data) {
-    delete data;
 }

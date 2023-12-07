@@ -113,8 +113,8 @@ void Elonef::ClientConnectionHandler::load_chat_keys(const std::unordered_set<st
 std::pair<CryptoPP::ByteQueue, CryptoPP::ByteQueue> Elonef::ClientConnectionHandler::get_newest_chat_key(const std::string& str) {
     this->wait_for_auth();
     CryptoPP::ByteQueue data = Elonef::toQueue(str);
-    std::unique_ptr<DataWaiter<CryptoPP::ByteQueue>> handler = std::make_unique<DataWaiter<CryptoPP::ByteQueue>>();
-    this->send(this->client, data, 0x12, new PromiseReturnHandler(handler.get()));
+    std::shared_ptr<DataWaiter<CryptoPP::ByteQueue>> handler = std::make_shared<DataWaiter<CryptoPP::ByteQueue>>();
+    this->send(this->client, data, 0x12, new PromiseReturnHandler(handler));
 
     CryptoPP::ByteQueue returned_data = handler->get();
     CryptoPP::ByteQueue encrypted_key = extractDynamicLengthQueue(returned_data);
@@ -151,8 +151,8 @@ void Elonef::ClientConnectionHandler::send_message(CryptoPP::ByteQueue& message,
 }
 
 std::vector<Elonef::Message> Elonef::ClientConnectionHandler::read_messages(const std::string& chat_id, const size_t& msg_id, const size_t& amount_of_messages) {
-    std::unique_ptr<DataWaiter<CryptoPP::ByteQueue>> handler = std::make_unique<DataWaiter<CryptoPP::ByteQueue>>();
-    this->read_messages(chat_id, msg_id, amount_of_messages, new PromiseReturnHandler(handler.get()));
+    std::shared_ptr<DataWaiter<CryptoPP::ByteQueue>> handler = std::make_shared<DataWaiter<CryptoPP::ByteQueue>>();
+    this->read_messages(chat_id, msg_id, amount_of_messages, new PromiseReturnHandler(handler));
     
     CryptoPP::ByteQueue result = handler->get();
     return this->decode_message(result, chat_id);
@@ -167,8 +167,8 @@ void Elonef::ClientConnectionHandler::read_messages(const std::string& chat_id, 
 
 
 CryptoPP::ByteQueue Elonef::ClientConnectionHandler::make_api_request(const std::string& chat_id, CryptoPP::ByteQueue& data, const bool& wait_for_auth) {
-    std::unique_ptr<DataWaiter<CryptoPP::ByteQueue>> handler = std::make_unique<DataWaiter<CryptoPP::ByteQueue>>();
-    this->make_api_request(chat_id, data, wait_for_auth, new PromiseReturnHandler(handler.get()));
+    std::shared_ptr<DataWaiter<CryptoPP::ByteQueue>> handler = std::make_shared<DataWaiter<CryptoPP::ByteQueue>>();
+    this->make_api_request(chat_id, data, wait_for_auth, new PromiseReturnHandler(handler));
     return handler->get();
 }
 
