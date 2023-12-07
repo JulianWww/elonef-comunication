@@ -1,4 +1,4 @@
-#include <elonef-communication/handlers/client_data/client_auth_data.hpp>
+#include <elonef-communication/handlers/data/client_auth_data.hpp>
 
 Elonef::ClientAuthData::ClientAuthData() {}
 

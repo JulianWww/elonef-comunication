@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cryptopp/queue.h>
+#include "connection_data.hpp"
 
 namespace Elonef {
     struct ClientAuthData {

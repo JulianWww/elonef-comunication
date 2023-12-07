@@ -3,8 +3,8 @@
 #include <cryptopp/rsa.h>
 #include <condition_variable>
 #include "messageHandler.hpp"
-#include "client_data/client_connection_data.hpp"
-#include "client_data/client_auth_data.hpp"
+#include "data/client_connection_data.hpp"
+#include "data/client_auth_data.hpp"
 #include "../types.hpp"
 #include "../keys/genKeys.hpp"
 #include "../hashing.hpp"

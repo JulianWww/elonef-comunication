@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cryptopp/queue.h>
 #include <cryptopp/rsa.h>
-#include "handlers/client_data/client_auth_data.hpp"
+#include "handlers/data/client_auth_data.hpp"
 #include "types.hpp"
 #include "utils.hpp"
 #include <unordered_set>

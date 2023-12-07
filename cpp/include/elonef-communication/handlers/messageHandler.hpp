@@ -17,6 +17,7 @@
 #include <ixwebsocket/IXWebSocket.h>
 #include <ixwebsocket/IXConnectionState.h>
 #include "../data_waiter.hpp"
+#include "data/connection_data.hpp"
 
 
 namespace Elonef
@@ -93,18 +94,26 @@ inline Elonef::MessageHandler<T, ConnData>::~MessageHandler() {
 
 template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::handle_message(ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {   
+    ConnData* connData = webSocket.getCustomData<ConnData>();
+    connData->active_processes++;
     switch (msg->type) {
         case (ix::WebSocketMessageType::Open) : {
             this->send_ready = true;
             _this->onOpen(webSocket);
+            connData->active_processes--;
             return;
         }
         case (ix::WebSocketMessageType::Close) : {
             _this->onClose(webSocket);
+            connData->active_processes--;
+            while (connData->active_processes != 0) {
+                std::this_thread::yield();
+            }
+            
             return;
         }
         case (ix::WebSocketMessageType::Message) : {
-            this->handle_message(webSocket, msg->str, webSocket.getCustomData<ConnData>());
+            this->handle_message(webSocket, msg->str, connData);
             return;
         }
     };
@@ -121,6 +130,7 @@ template<typename T, typename ConnData>
 inline void Elonef::MessageHandler<T, ConnData>::_handle_message_s(MessageHandler* _this, ix::WebSocket* ws, const std::string& data, ConnData* connData){
     _this->_handle_message_switch(*ws, data, *connData);
     _this->clean_executors();
+    connData->active_processes--;
 }
 
 

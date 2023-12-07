@@ -6,13 +6,14 @@
 #include "../sliding_time_window.hpp"
 #include "../keys/genKeys.hpp"
 #include <unordered_set>
-
+#include <atomic>
 
 namespace Elonef {
-    struct ServerConnectionData {
+    struct ServerConnectionData : public ConnectionData {
         bool authenticated = false;
         CryptoPP::ByteQueue auth_data;
         std::string uid;
+        std::atomic_uint64_t active_processes;
     };
 
     class ServerConnectionHandler : public MessageHandler<ServerConnectionHandler, ServerConnectionData>, public ix::WebSocketServer {
