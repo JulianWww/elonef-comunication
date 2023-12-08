@@ -151,6 +151,7 @@ void Elonef::ClientConnectionHandler::send_message(CryptoPP::ByteQueue& message,
 }
 
 std::vector<Elonef::Message> Elonef::ClientConnectionHandler::read_messages(const std::string& chat_id, const size_t& msg_id, const size_t& amount_of_messages) {
+    this->wait_for_auth();
     std::shared_ptr<DataWaiter<CryptoPP::ByteQueue>> handler = std::make_shared<DataWaiter<CryptoPP::ByteQueue>>();
     this->read_messages(chat_id, msg_id, amount_of_messages, new PromiseReturnHandler(handler));
     

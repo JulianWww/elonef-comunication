@@ -3,8 +3,17 @@
 #include <cryptopp/queue.h>
 #include "../keys/genKeys.hpp"
 #include <iterator>
+#include <concepts>
+
+template<typename T>
+concept HasToQueue = requires(T a)
+{
+    { a.toQueue() } -> std::convertible_to<CryptoPP::ByteQueue>;
+};
 
 namespace Elonef {
+    template<HasToQueue T>
+    CryptoPP::ByteQueue toBytes(const T& val);
     CryptoPP::ByteQueue toBytes(size_t number);
     CryptoPP::ByteQueue toBytes_short(size_t number);
     CryptoPP::ByteQueue toBytes(const std::string& str, CryptoPP::ByteQueue(*number_encoder)(size_t num) = & toBytes);
@@ -25,6 +34,11 @@ namespace Elonef {
 
     CryptoPP::ByteQueue stringQueuePairListToBuffer(const std::list<std::pair<std::string, CryptoPP::ByteQueue>>& value);
     CryptoPP::ByteQueue signedKeyToBytes(const SignedKey& key);
+}
+
+template<HasToQueue T>
+inline CryptoPP::ByteQueue Elonef::toBytes(const T& val) {
+    return val.toQueue();
 }
 
 template<typename T>

@@ -145,3 +145,4 @@ cpp/uuid_v4/
 cpp/cryptopp-cmake/
 cpp/cryptopp-pem-cmake/
 cpp/build/
+.vscode/
